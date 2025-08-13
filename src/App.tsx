@@ -28,7 +28,12 @@ export default function App() {
                 className={`px-3 py-2 rounded-xl hover:bg-slate-800 transition ${route===key? 'bg-slate-800 ring-1 ring-slate-700' : ''}`}
               >{key[0].toUpperCase()+key.slice(1)}</button>
             ))}
-            <a href="mailto:hello@powervisualize.com" className="ml-2 px-3 py-2 rounded-xl border border-slate-700 hover:bg-slate-800">Email</a>
+            <a
+              href="mailto:rowens@powervisualize.com"
+              className="ml-2 px-3 py-2 rounded-xl border border-slate-700 hover:bg-slate-800"
+            >
+              Email
+            </a>
           </nav>
         </div>
       </header>
@@ -61,7 +66,7 @@ function Home({ setRoute }: { setRoute: (r: 'home'|'about'|'dashboards'|'contact
           Power BI, Fabric & Automation
         </h1>
         <p className="mt-4 text-slate-300">
-          I build pragmatic analytics with Power BI & Fabric, and automate the last mile with Power Automate + Power Apps by using data INSIGHTS to create ACTION.  Too often BI development ends with analysis, where I excel is taking the team a step further, in acting on that insight.
+          I build pragmatic analytics with Power BI & Fabric, and automate the last mile with Power Automate + Power Apps by using data INSIGHTS to create ACTION. Too often BI development ends with analysis—where I excel is taking the team a step further, in acting on that insight.
         </p>
         <div className="mt-6 flex gap-3">
           <button onClick={() => setRoute('dashboards')} className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-400 to-fuchsia-500 text-slate-900 font-semibold">
@@ -134,6 +139,18 @@ function About() {
         <li><strong>MMIT – BI Developer (2019–2023):</strong> Power BI/Tableau delivery, Snowflake data engineering, cross-team analytics enablement, and dashboarding COE leadership.</li>
         <li><strong>Earlier:</strong> Data Analyst (Philadelphia Union) with ML/sentiment in SAS; prior roles where I began visual analytics and KPI reporting.</li>
       </ul>
+
+      <p className="mt-6">
+        Find me on{' '}
+        <a
+          href="https://github.com/rowens2025"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline decoration-slate-600 hover:decoration-slate-300"
+        >
+          GitHub (@rowens2025)
+        </a>.
+      </p>
     </section>
   );
 }
@@ -157,8 +174,8 @@ function PreviewFrame({ title, src, scale = 0.18 }: { title: string; src: string
             transformOrigin: 'top left',
             display: 'block',
             border: '0',
-            pointerEvents: 'none',        // lets the surrounding <button> get the click
-            backgroundColor: '#0b0f17'    // blends any outer gaps with page background
+            pointerEvents: 'none',
+            backgroundColor: '#0b0f17'
           }}
           loading="lazy"
         />
@@ -259,20 +276,46 @@ function Contact() {
     <section className="max-w-xl">
       <h2 className="text-2xl font-semibold">Contact</h2>
       <p className="text-slate-400 text-sm mt-1">
-        Send a message. This form posts to mailto: by default — replace with your API later.
+        Send a message—this form delivers straight to <span className="text-slate-200">rowens@powervisualize.com</span>.
       </p>
-      <form action="mailto:hello@powervisualize.com" method="post" encType="text/plain" className="mt-6 grid gap-4">
-        <input className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800" name="name" placeholder="Your name" />
-        <input className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800" name="email" placeholder="Your email" />
+
+      <form
+        action="https://formspree.io/f/myzpobor"
+        method="POST"
+        className="mt-6 grid gap-4"
+      >
+        <input type="hidden" name="_subject" value="Portfolio contact — powervisualize.com" />
+
+        <input
+          className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800"
+          name="name"
+          placeholder="Your name"
+          required
+        />
+        <input
+          className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800"
+          type="email"
+          name="email"
+          placeholder="Your email"
+          required
+        />
         <textarea
           className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 min-h-[140px]"
           name="message"
           placeholder="Tell me about your project..."
+          required
         />
-        <button className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-400 to-fuchsia-500 text-slate-900 font-semibold">
+        <button
+          type="submit"
+          className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-400 to-fuchsia-500 text-slate-900 font-semibold"
+        >
           Send
         </button>
       </form>
+
+      <p className="text-xs text-slate-500 mt-3">
+        By submitting, you consent to be contacted about your inquiry.
+      </p>
     </section>
   );
 }
