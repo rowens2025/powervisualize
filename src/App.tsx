@@ -166,15 +166,16 @@ function TechBadges() {
 function About() {
   return (
     <section className="prose prose-invert max-w-none">
-      <h2>About Me</h2>
+      <h1><b> About Me</b></h1>
+      <br></br>
       <p>
         I’m Ryan Owens, a Senior BI developer who ships clean, reliable analytics with Power BI and Microsoft Fabric. I focus on practical data models, fast
-        DAX, and a UX that helps non-technical teams act quickly. I’ve built and embedded dashboards for 100+ customers, automated alerting with Power Automate,
-        and launched lightweight apps in Power Apps to close the loop.<br /><br />
+        DAX, and a UX that helps non-technical teams act quickly, as well as advanced dashboards for the technically sound manager to easily build their own changes to visualizations. I’ve built and embedded dashboards reaching 100+ customers, automated alerting with Power Automate,
+        and launched lightweight apps in Power Apps to close the loop.  I've utilized Fabric to build data warehouses and lakehouses, extracting and transforming the data using dataflows and python notebooks to create bronze, silver, and gold layers of data structure.<br /><br />
       </p>
       <h3>Core Skill Set</h3>
       <ul>
-        <li>Power BI & Fabric: data modeling (star schemas, semantic models), DAX/M, RLS, performance tuning</li>
+        <li>Power BI & Fabric: data modeling (star schemas, semantic models), DAX/M, RLS, performance tuning, lakehouses using medallion architecture</li>
         <li>Automation & Apps: Power Automate (KPI alerts, distribution, workflow orchestration), Power Apps (mobile/Teams apps)</li>
         <li>Data Engineering: SQL/T-SQL (SPs, indexing), Python/PySpark pipelines, lakehouse patterns</li>
         <li>Platforms & Sources: SQL Server, Snowflake, Dataverse; integrations with Jira, Salesforce, MongoDB, Smartsheet; Azure & AWS</li>
