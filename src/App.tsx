@@ -314,14 +314,14 @@ function DashboardList({
             Showcasing a variety of compelling and interactive dashboards.
             <br />
             <br />
-            To discover how we’d utilize this data to not just react to data, but act on how our insights, reach us in the{' '}
+            While some BI Developers are content with reacting to data, we prefer to act on it.  Reach us in the{' '}
             <button
               onClick={() => setRoute('contact')}
               className="underline decoration-slate-600 hover:decoration-slate-300"
             >
               Contact
             </button>{' '}
-            section.
+            section, to discover how we’d utilize this data to create new efficiencies and automations to drive metrics in a positive direction.
           </p>
         </div>
       </div>
