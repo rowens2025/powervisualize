@@ -39,9 +39,13 @@ export default function App() {
       <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-slate-900/60 bg-slate-900/80 border-b border-slate-800">
         <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-4">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-cyan-400 to-fuchsia-500" />
-            <span className="font-semibold tracking-wide">PowerVisualize</span>
-          </div>
+            <img
+              src="/PVFavicon.png"
+              alt="Power Visualize"
+              className="h-12 w-auto"
+            />
+  <span className="font-semibold tracking-wide">PowerVisualize</span>
+</div>
 
           <nav className="flex items-center gap-2 text-sm">
             {(['home', 'about', 'dashboards', 'contact'] as const).map((key) => (
