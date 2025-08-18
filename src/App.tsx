@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 export default function App() {
   const [route, setRoute] = useState<'home' | 'about' | 'dashboards' | 'contact'>('home');
   const [openReport, setOpenReport] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false); // NEW: mobile menu
 
   // Add preview image paths (place files in /public/previews/*.jpg)
   const reports: { id: string; title: string; src: string; preview?: string }[] = [
@@ -36,36 +37,83 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#0b0f17] text-slate-100 selection:bg-fuchsia-500/30 selection:text-slate-100">
+      {/* ===== Header (updated) ===== */}
       <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-slate-900/60 bg-slate-900/80 border-b border-slate-800">
-        <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-2">
-            <img
-              src="/PVFavicon.png"
-              alt="Power Visualize"
-              className="h-12 w-auto"
-            />
-  <span className="font-semibold tracking-wide">PowerVisualize</span>
-</div>
-
-          <nav className="flex items-center gap-2 text-sm">
-            {(['home', 'about', 'dashboards', 'contact'] as const).map((key) => (
-              <button
-                key={key}
-                onClick={() => { setRoute(key); setOpenReport(null); }}
-                className={`px-3 py-2 rounded-xl transition-all duration-200 hover:bg-slate-800 hover:translate-y-[-1px] ${
-                  route === key ? 'bg-slate-800 ring-1 ring-slate-700' : 'border border-transparent'
-                }`}
-              >
-                {key[0].toUpperCase() + key.slice(1)}
-              </button>
-            ))}
-            <a
-              href="mailto:rowens@powervisualize.com"
-              className="ml-2 px-3 py-2 rounded-xl border border-slate-700 hover:bg-slate-800 transition-all duration-200 hover:translate-y-[-1px]"
+        <div className="max-w-6xl mx-auto px-4">
+          {/* Top row */}
+          <div className="h-14 flex items-center justify-between">
+            {/* Brand: bigger logo, text hidden on xs */}
+            <button
+              onClick={() => { setRoute('home'); setOpenReport(null); }}
+              className="flex items-center gap-2"
             >
-              Email
-            </a>
-          </nav>
+              <img
+                src="/PVFavicon.png"            
+                alt="PowerVisualize"
+                className="h-10 w-10 -my-1 rounded-xl object-contain"
+                draggable={false}
+              />
+              <span className="hidden sm:inline font-semibold tracking-wide">
+                PowerVisualize
+              </span>
+            </button>
+
+            {/* Desktop nav */}
+            <nav className="hidden sm:flex items-center gap-2 text-sm">
+              {(['home', 'about', 'dashboards', 'contact'] as const).map((key) => (
+                <button
+                  key={key}
+                  onClick={() => { setRoute(key); setOpenReport(null); }}
+                  className={`px-3 py-2 rounded-xl transition-all duration-200 hover:bg-slate-800 hover:translate-y-[-1px] ${
+                    route === key ? 'bg-slate-800 ring-1 ring-slate-700' : 'border border-transparent'
+                  }`}
+                >
+                  {key[0].toUpperCase() + key.slice(1)}
+                </button>
+              ))}
+              <a
+                href="mailto:rowens@powervisualize.com"
+                className="ml-2 px-3 py-2 rounded-xl border border-slate-700 hover:bg-slate-800 transition-all duration-200 hover:translate-y-[-1px]"
+              >
+                Email
+              </a>
+            </nav>
+
+            {/* Mobile hamburger */}
+            <button
+              className="sm:hidden p-2 rounded-xl hover:bg-slate-800"
+              aria-label="Menu"
+              onClick={() => setMenuOpen(v => !v)}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Mobile dropdown */}
+          {menuOpen && (
+            <div className="sm:hidden pb-3 flex flex-col gap-2">
+              {(['home','about','dashboards','contact'] as const).map((key) => (
+                <button
+                  key={key}
+                  onClick={() => { setRoute(key); setOpenReport(null); setMenuOpen(false); }}
+                  className={`w-full text-left px-3 py-2 rounded-xl transition hover:bg-slate-800 ${
+                    route === key ? 'bg-slate-800 ring-1 ring-slate-700' : 'border border-slate-800'
+                  }`}
+                >
+                  {key[0].toUpperCase()+key.slice(1)}
+                </button>
+              ))}
+              <a
+                href="mailto:rowens@powervisualize.com"
+                onClick={() => setMenuOpen(false)}
+                className="px-3 py-2 rounded-xl border border-slate-700 hover:bg-slate-800"
+              >
+                Email
+              </a>
+            </div>
+          )}
         </div>
       </header>
 
@@ -423,4 +471,3 @@ function Contact() {
     </section>
   );
 }
-
