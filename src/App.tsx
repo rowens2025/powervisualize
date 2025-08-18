@@ -367,7 +367,7 @@ function DashboardList({
             Showcasing a variety of compelling and interactive dashboards.
             <br />
             <br />
-            While some BI Developers are content with reacting to data, we prefer to act on it.  Reach us in the{' '}
+            While some BI Developers are content with reacting to data, we prefer to act on it.  Reach out in the{' '}
             <button
               onClick={() => setRoute('contact')}
               className="underline decoration-slate-600 hover:decoration-slate-300"
