@@ -374,7 +374,7 @@ function DashboardList({
             >
               Contact
             </button>{' '}
-            section, to discover how we’d utilize this data to create new efficiencies and automations to drive metrics in a positive direction.
+            section, to discover how to create new efficiencies and automations to drive metrics in a positive direction.
           </p>
         </div>
       </div>
