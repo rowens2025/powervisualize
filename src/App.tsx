@@ -11,7 +11,7 @@ export default function App() {
       id: 'r1',
       title: 'Bayesian Marketing Experiment',
       src: 'https://app.powerbi.com/view?r=eyJrIjoiNGRhYzIyMDEtYWUyYi00ZjVjLTg2YWEtNmM5NTFkYWE5YWVkIiwidCI6IjM2ZmE0ZWQ4LTEyMjMtNGQ4MC1iYjU4LWZhYjFkNzc2ZjNmZSIsImMiOjF9',
-      preview: '/previews/bayesian.jpg',
+      preview: '/previews/bayesian.png',
     },
     {
       id: 'r2',
