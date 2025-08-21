@@ -7,32 +7,38 @@ export default function App() {
 
   // Add preview image paths (place files in /public/previews/*.jpg)
   const reports: { id: string; title: string; src: string; preview?: string }[] = [
-    {
+        {
       id: 'r1',
+      title: 'Bayesian Marketing Experiment',
+      src: 'https://app.powerbi.com/view?r=eyJrIjoiNGRhYzIyMDEtYWUyYi00ZjVjLTg2YWEtNmM5NTFkYWE5YWVkIiwidCI6IjM2ZmE0ZWQ4LTEyMjMtNGQ4MC1iYjU4LWZhYjFkNzc2ZjNmZSIsImMiOjF9',
+      preview: '/previews/bayesian.jpg',
+    },
+    {
+      id: 'r2',
       title: 'Executive Sales Insights',
       src: 'https://app.powerbi.com/view?r=eyJrIjoiNjMxY2M3ZDAtNzIzZi00MWI1LWE0ZmQtZDdjMDcwNzBiMjE4IiwidCI6IjM2ZmE0ZWQ4LTEyMjMtNGQ4MC1iYjU4LWZhYjFkNzc2ZjNmZSIsImMiOjF9',
       preview: '/previews/sales.jpg',
     },
     {
-      id: 'r2',
+      id: 'r3',
       title: 'Geocoding Compliance',
       src: 'https://app.powerbi.com/view?r=eyJrIjoiOTBkNGI1Y2ItMmJjZC00ZmViLWJlZDUtMjkwNmI2MjYyYzhhIiwidCI6IjM2ZmE0ZWQ4LTEyMjMtNGQ4MC1iYjU4LWZhYjFkNzc2ZjNmZSIsImMiOjF9',
       preview: '/previews/geo.jpg',
     },
     {
-      id: 'r3',
+      id: 'r4',
       title: 'Hotel Booking Analysis',
       src: 'https://app.powerbi.com/view?r=eyJrIjoiNGJkNWQ0NDYtMDMwOS00NjE3LWE4Y2MtYjRjMWUxZDExYTE2IiwidCI6IjM2ZmE0ZWQ4LTEyMjMtNGQ4MC1iYjU4LWZhYjFkNzc2ZjNmZSIsImMiOjF9',
       preview: '/previews/hotel.jpg',
     },
     {
-      id: 'r4',
+      id: 'r5',
       title: 'Global Steel KPI Matrix',
       src: 'https://app.powerbi.com/view?r=eyJrIjoiNWRjNjEwYmUtODNkMS00MzI5LTk5M2YtYmE4MDkzNDhjMmNmIiwidCI6IjM2ZmE0ZWQ4LTEyMjMtNGQ4MC1iYjU4LWZhYjFkNzc2ZjNmZSIsImMiOjF9',
       preview: '/previews/steel.jpg',
     },
-    // r5 left as-is; you can add a Qlik URL + preview later
-    { id: 'r5', title: 'Under Construction', src: '' },
+    // r6 left as-is;
+    { id: 'r6', title: 'Under Construction', src: '' },
   ];
 
   return (
@@ -177,15 +183,15 @@ function HeroCard() {
     <div className="relative rounded-3xl p-6 md:p-10 bg-gradient-to-br from-slate-900 to-slate-800 ring-1 ring-slate-700 shadow-2xl">
       <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-cyan-500/20 to-fuchsia-500/20 blur-2xl" />
       <div className="relative">
-        <h2 className="text-xl font-medium">Featured: Hotel Bookings Analysis</h2>
-        <p className="text-slate-300 mt-2 text-sm">Interactive KPI dashboard showcasing DAX measures, bookmarks, targeted slicers, and design.</p>
+        <h2 className="text-xl font-medium">Featured: Bayesian Marketing Experiment</h2>
+        <p className="text-slate-300 mt-2 text-sm">Showcasing PowerBI and Fabrics capabilities for bayesian analysis via Python.</p>
 
         {/* Responsive embed (homepage stays as-is) */}
         <div className="mt-6 aspect-video rounded-2xl ring-1 ring-slate-700 overflow-hidden bg-[#0b0f17]">
           <iframe
-            title="Hotel Bookings Analysis"
+            title="Bayesian Marketing Experiment"
             src={
-              'https://app.powerbi.com/view?r=eyJrIjoiNGJkNWQ0NDYtMDMwOS00NjE3LWE4Y2MtYjRjMWUxZDExYTE2IiwidCI6IjM2ZmE0ZWQ4LTEyMjMtNGQ4MC1iYjU4LWZhYjFkNzc2ZjNmZSIsImMiOjF9&filterPaneEnabled=false&navContentPaneEnabled=false'
+              'https://app.powerbi.com/view?r=eyJrIjoiNGRhYzIyMDEtYWUyYi00ZjVjLTg2YWEtNmM5NTFkYWE5YWVkIiwidCI6IjM2ZmE0ZWQ4LTEyMjMtNGQ4MC1iYjU4LWZhYjFkNzc2ZjNmZSIsImMiOjF9&filterPaneEnabled=false&navContentPaneEnabled=false'
             }
             className="w-full h-full block"
             frameBorder={0}
