@@ -238,20 +238,6 @@ function About() {
         <li>Data Engineering: SQL/T-SQL (SPs, indexing), Python/PySpark pipelines, lakehouse patterns</li>
         <li>Platforms & Sources: SQL Server, Snowflake, Dataverse; integrations with Jira, Salesforce, MongoDB, Smartsheet; Azure & AWS</li>
         <li>Tooling: Tableau & SAS (prior work), AI copilots (Cursor, ChatGPT) to accelerate delivery</li>
-      </ul><br /><br />
-      <h3>Recent Experience</h3>
-      <ul>
-        <li>
-          <strong>Senior BI Developer (2023–Present):</strong> embedded, RLS-secured customer dashboards; Fabric pipelines and lakehouses in the medallion architecture; alerting & report
-          distribution with Power Automate; Power Apps for on-call workflows; impact tracking for AI-driven collections tools.
-        </li>
-        <li>
-          <strong>BI Developer (2019–2023):</strong> Power BI/Tableau delivery, Snowflake data engineering, cross-team analytics enablement, and
-          dashboarding COE leadership.
-        </li>
-        <li>
-          <strong>Earlier:</strong> Data Analyst (Philadelphia Union) with ML/sentiment in SAS; prior roles where I began visual analytics and KPI reporting.
-        </li>
       </ul>
 
       <p className="mt-6">
