@@ -7,38 +7,44 @@ export default function App() {
 
   // Add preview image paths (place files in /public/previews/*.jpg)
   const reports: { id: string; title: string; src: string; preview?: string }[] = [
-        {
+    {
       id: 'r1',
+      title: 'Over and Back Again: Tracking Steps',
+      src: 'https://app.powerbi.com/view?r=eyJrIjoiN2VmZDdmZWYtYjlkNC00ZGYxLWE5MTctYzMxODVjM2UzMmE2IiwidCI6IjM2ZmE0ZWQ4LTEyMjMtNGQ4MC1iYjU4LWZhYjFkNzc2ZjNmZSIsImMiOjF9',
+      preview: '/previews/frodosteps.png',
+    },    
+    {
+      id: 'r2',
       title: 'Bayesian Marketing Experiment',
       src: 'https://app.powerbi.com/view?r=eyJrIjoiNGRhYzIyMDEtYWUyYi00ZjVjLTg2YWEtNmM5NTFkYWE5YWVkIiwidCI6IjM2ZmE0ZWQ4LTEyMjMtNGQ4MC1iYjU4LWZhYjFkNzc2ZjNmZSIsImMiOjF9',
       preview: '/previews/bayesian.png',
     },
     {
-      id: 'r2',
+      id: 'r3',
       title: 'Executive Sales Insights',
       src: 'https://app.powerbi.com/view?r=eyJrIjoiNjMxY2M3ZDAtNzIzZi00MWI1LWE0ZmQtZDdjMDcwNzBiMjE4IiwidCI6IjM2ZmE0ZWQ4LTEyMjMtNGQ4MC1iYjU4LWZhYjFkNzc2ZjNmZSIsImMiOjF9',
       preview: '/previews/sales.jpg',
     },
     {
-      id: 'r3',
+      id: 'r4',
       title: 'Geocoding Compliance',
       src: 'https://app.powerbi.com/view?r=eyJrIjoiOTBkNGI1Y2ItMmJjZC00ZmViLWJlZDUtMjkwNmI2MjYyYzhhIiwidCI6IjM2ZmE0ZWQ4LTEyMjMtNGQ4MC1iYjU4LWZhYjFkNzc2ZjNmZSIsImMiOjF9',
       preview: '/previews/geo.jpg',
     },
     {
-      id: 'r4',
+      id: 'r5',
       title: 'Hotel Booking Analysis',
       src: 'https://app.powerbi.com/view?r=eyJrIjoiNGJkNWQ0NDYtMDMwOS00NjE3LWE4Y2MtYjRjMWUxZDExYTE2IiwidCI6IjM2ZmE0ZWQ4LTEyMjMtNGQ4MC1iYjU4LWZhYjFkNzc2ZjNmZSIsImMiOjF9',
       preview: '/previews/hotel.jpg',
     },
     {
-      id: 'r5',
+      id: 'r6',
       title: 'Global Steel KPI Matrix',
       src: 'https://app.powerbi.com/view?r=eyJrIjoiNWRjNjEwYmUtODNkMS00MzI5LTk5M2YtYmE4MDkzNDhjMmNmIiwidCI6IjM2ZmE0ZWQ4LTEyMjMtNGQ4MC1iYjU4LWZhYjFkNzc2ZjNmZSIsImMiOjF9',
       preview: '/previews/steel.jpg',
     },
-    // r6 left as-is;
-    { id: 'r6', title: 'Under Construction', src: '' },
+    // r7 left as-is;
+    { id: 'r7', title: 'Under Construction', src: '' },
   ];
 
   return (
