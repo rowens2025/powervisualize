@@ -1,18 +1,35 @@
 import { useEffect, useState } from 'react';
 
-export default function App() {
-  const [route, setRoute] = useState<'home' | 'about' | 'dashboards' | 'contact'>('home');
-  const [openReport, setOpenReport] = useState<string | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false); // NEW: mobile menu
+type Route = 'home' | 'about' | 'dashboards' | 'data-projects' | 'contact';
 
-  // Add preview image paths (place files in /public/previews/*.jpg)
-  const reports: { id: string; title: string; src: string; preview?: string }[] = [
+type Report = { id: string; title: string; src: string; preview?: string };
+
+type DataProject = {
+  id: string;
+  title: string;
+  preview?: string; // image path in /public
+  slides?: {
+    basePath: string; // e.g. "/dataprojects/dp1/slides"
+    count: number; // e.g. 18
+    prefix?: string; // default "Slide"
+    ext?: string; // default "png"
+  };
+  maps?: { key: 'buildings' | 'nta'; label: string; src: string }[];
+};
+
+export default function App() {
+  const [route, setRoute] = useState<Route>('home');
+  const [openReport, setOpenReport] = useState<string | null>(null);
+  const [openDataProject, setOpenDataProject] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const reports: Report[] = [
     {
       id: 'r1',
       title: 'Over and Back Again: Tracking Steps',
       src: 'https://app.powerbi.com/view?r=eyJrIjoiN2VmZDdmZWYtYjlkNC00ZGYxLWE5MTctYzMxODVjM2UzMmE2IiwidCI6IjM2ZmE0ZWQ4LTEyMjMtNGQ4MC1iYjU4LWZhYjFkNzc2ZjNmZSIsImMiOjF9',
       preview: '/previews/frodosteps.png',
-    },    
+    },
     {
       id: 'r2',
       title: 'Bayesian Marketing Experiment',
@@ -43,44 +60,66 @@ export default function App() {
       src: 'https://app.powerbi.com/view?r=eyJrIjoiNWRjNjEwYmUtODNkMS00MzI5LTk5M2YtYmE4MDkzNDhjMmNmIiwidCI6IjM2ZmE0ZWQ4LTEyMjMtNGQ4MC1iYjU4LWZhYjFkNzc2ZjNmZSIsImMiOjF9',
       preview: '/previews/steel.jpg',
     },
-    // r7 left as-is;
     { id: 'r7', title: 'Under Construction', src: '' },
   ];
 
+  // ✅ Your first data project (dp1)
+  const dataProjects: DataProject[] = [
+    {
+      id: 'dp1',
+      title: 'NYC Flood Risk: Buildings vs Neighborhoods',
+      preview: '/previews/dp1.png', // you created this
+      slides: {
+        basePath: '/dataprojects/dp1/slides',
+        count: 18,
+        prefix: 'Slide',
+        ext: 'PNG',
+      },
+      maps: [
+        { key: 'buildings', label: 'Buildings', src: '/maps/nyc_flood_risk_buildings.html' },
+        { key: 'nta', label: 'Neighborhoods', src: '/maps/nyc_flood_risk_nta.html' },
+      ],
+    },
+    { id: 'uc', title: 'Under Construction' },
+  ];
+
+  const navKeys: Route[] = ['home', 'about', 'dashboards', 'data-projects', 'contact'];
+
+  function go(routeKey: Route) {
+    setRoute(routeKey);
+    setOpenReport(null);
+    setOpenDataProject(null);
+    setMenuOpen(false);
+  }
+
   return (
     <div className="min-h-screen bg-[#0b0f17] text-slate-100 selection:bg-fuchsia-500/30 selection:text-slate-100">
-      {/* ===== Header (updated) ===== */}
+      {/* ===== Header ===== */}
       <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-slate-900/60 bg-slate-900/80 border-b border-slate-800">
         <div className="max-w-6xl mx-auto px-4">
-          {/* Top row */}
           <div className="h-14 flex items-center justify-between">
-            {/* Brand: bigger logo, text hidden on xs */}
-            <button
-              onClick={() => { setRoute('home'); setOpenReport(null); }}
-              className="flex items-center gap-2"
-            >
+            {/* Brand */}
+            <button onClick={() => go('home')} className="flex items-center gap-2">
               <img
-                src="/PVFavicon.png"            
+                src="/PVFavicon.png"
                 alt="PowerVisualize"
                 className="h-10 w-10 -my-1 rounded-xl object-contain"
                 draggable={false}
               />
-              <span className="hidden sm:inline font-semibold tracking-wide">
-                PowerVisualize
-              </span>
+              <span className="hidden sm:inline font-semibold tracking-wide">PowerVisualize</span>
             </button>
 
             {/* Desktop nav */}
             <nav className="hidden sm:flex items-center gap-2 text-sm">
-              {(['home', 'about', 'dashboards', 'contact'] as const).map((key) => (
+              {navKeys.map((key) => (
                 <button
                   key={key}
-                  onClick={() => { setRoute(key); setOpenReport(null); }}
+                  onClick={() => go(key)}
                   className={`px-3 py-2 rounded-xl transition-all duration-200 hover:bg-slate-800 hover:translate-y-[-1px] ${
                     route === key ? 'bg-slate-800 ring-1 ring-slate-700' : 'border border-transparent'
                   }`}
                 >
-                  {key[0].toUpperCase() + key.slice(1)}
+                  {key === 'data-projects' ? 'Data Projects' : key[0].toUpperCase() + key.slice(1)}
                 </button>
               ))}
               <a
@@ -95,7 +134,7 @@ export default function App() {
             <button
               className="sm:hidden p-2 rounded-xl hover:bg-slate-800"
               aria-label="Menu"
-              onClick={() => setMenuOpen(v => !v)}
+              onClick={() => setMenuOpen((v) => !v)}
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                 <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -106,22 +145,18 @@ export default function App() {
           {/* Mobile dropdown */}
           {menuOpen && (
             <div className="sm:hidden pb-3 flex flex-col gap-2">
-              {(['home','about','dashboards','contact'] as const).map((key) => (
+              {navKeys.map((key) => (
                 <button
                   key={key}
-                  onClick={() => { setRoute(key); setOpenReport(null); setMenuOpen(false); }}
+                  onClick={() => go(key)}
                   className={`w-full text-left px-3 py-2 rounded-xl transition hover:bg-slate-800 ${
                     route === key ? 'bg-slate-800 ring-1 ring-slate-700' : 'border border-slate-800'
                   }`}
                 >
-                  {key[0].toUpperCase()+key.slice(1)}
+                  {key === 'data-projects' ? 'Data Projects' : key[0].toUpperCase() + key.slice(1)}
                 </button>
               ))}
-              <a
-                href="mailto:rowens@powervisualize.com"
-                onClick={() => setMenuOpen(false)}
-                className="px-3 py-2 rounded-xl border border-slate-700 hover:bg-slate-800"
-              >
+              <a href="mailto:rowens@powervisualize.com" className="px-3 py-2 rounded-xl border border-slate-700 hover:bg-slate-800">
                 Email
               </a>
             </div>
@@ -130,15 +165,27 @@ export default function App() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-10">
-        {route === 'home' && <Home setRoute={setRoute} />}
+        {route === 'home' && <Home setRoute={go} />}
+
         {route === 'about' && <About />}
-        {route === 'dashboards' && (
-          openReport ? (
+
+        {route === 'dashboards' &&
+          (openReport ? (
             <ReportViewer report={reports.find((r) => r.id === openReport)!} onBack={() => setOpenReport(null)} />
           ) : (
-            <DashboardList reports={reports} onOpen={setOpenReport} setRoute={setRoute} />
-          )
-        )}
+            <DashboardList reports={reports} onOpen={setOpenReport} setRoute={go} />
+          ))}
+
+        {route === 'data-projects' &&
+          (openDataProject ? (
+            <DataProjectViewer
+              project={dataProjects.find((p) => p.id === openDataProject)!}
+              onBack={() => setOpenDataProject(null)}
+            />
+          ) : (
+            <DataProjectList projects={dataProjects} onOpen={setOpenDataProject} />
+          ))}
+
         {route === 'contact' && <Contact />}
       </main>
 
@@ -150,25 +197,239 @@ export default function App() {
 }
 
 /* ------------------------------------ */
+/* Data Projects: List + Viewer         */
+/* ------------------------------------ */
+
+function DataProjectList({
+  projects,
+  onOpen,
+}: {
+  projects: DataProject[];
+  onOpen: (id: string) => void;
+}) {
+  return (
+    <section>
+      <div className="flex items-end justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-semibold">Data Projects</h2>
+          <p className="text-slate-400 text-sm mt-2 max-w-3xl">
+            Applied analytics projects built with Python (GeoPandas + Folium), focused on turning spatial data into a narrative.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {projects.map((p) => (
+          <button
+            key={p.id}
+            onClick={() => p.id !== 'uc' && onOpen(p.id)}
+            className="group text-left rounded-2xl p-4 bg-slate-900 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/60 transition-all duration-200 hover:translate-y-[-2px]"
+          >
+            <div className="aspect-video rounded-xl ring-1 ring-slate-800 overflow-hidden bg-slate-950/60">
+              {p.preview ? (
+                <img
+                  src={p.preview}
+                  alt={p.title}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-[1.01]"
+                />
+              ) : (
+                <div className="w-full h-full grid place-items-center text-slate-500 text-xs">Preview</div>
+              )}
+            </div>
+
+            <div className="mt-3 font-medium flex items-center justify-between">
+              <span>{p.title}</span>
+              <span className="text-xs text-slate-400 group-hover:text-slate-200 transition">
+                {p.id === 'uc' ? 'Unavailable' : 'Open →'}
+              </span>
+            </div>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function DataProjectViewer({ project, onBack }: { project: DataProject; onBack: () => void }) {
+  const maps = project.maps ?? [];
+  const [mapView, setMapView] = useState<'buildings' | 'nta'>(maps[0]?.key ?? 'buildings');
+  const activeMap = maps.find((m) => m.key === mapView) ?? maps[0];
+
+  const slides = project.slides;
+  const [slideIdx, setSlideIdx] = useState(1);
+
+  function slideSrc(i: number) {
+    if (!slides) return '';
+    const prefix = slides.prefix ?? 'Slide';
+    const ext = slides.ext ?? 'png';
+    // Your files are named Slide1.png, Slide2.png, ... Slide18.png
+    return `${slides.basePath}/${prefix}${i}.${ext}`;
+  }
+
+  const containerWidth = 'w-full md:w-2/3 mx-auto';
+
+  return (
+    <section className="space-y-6">
+      <div className="flex items-center justify-between">
+        <button
+          onClick={onBack}
+          className="px-3 py-2 rounded-xl border border-slate-700 hover:bg-slate-800 transition-all duration-200 hover:translate-y-[-1px]"
+        >
+          Back
+        </button>
+        <h2 className="text-lg font-semibold">{project.title}</h2>
+        <div />
+      </div>
+
+      {/* Intro (placeholder copy) */}
+      <div className={`${containerWidth} max-w-3xl`}>
+        <p className="text-slate-300">
+          Project that combines 3 disparate datasets on polygon shape and centroids to map them together and create an entirely new and robust dataset that is servicable across various industries and use cases.
+        </p>
+      </div>
+
+      {/* Slides (WORKING slideshow) */}
+      <div className={`${containerWidth} rounded-3xl bg-slate-900/60 border border-slate-800 overflow-hidden`}>
+        <div className="px-5 py-4 border-b border-slate-800 flex flex-wrap gap-3 items-center justify-between">
+          <div>
+            <div className="font-medium">Project Slides</div>
+            <div className="text-xs text-slate-400">Use arrows to browse Slide 1 → Slide {slides?.count ?? '?'}</div>
+          </div>
+
+          {slides ? (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSlideIdx((s) => Math.max(1, s - 1))}
+                className="px-3 py-1.5 rounded-lg text-sm border border-slate-700 hover:bg-slate-800"
+                disabled={slideIdx <= 1}
+                aria-label="Previous slide"
+              >
+                ←
+              </button>
+              <div className="text-xs text-slate-400 tabular-nums">
+                Slide {slideIdx} / {slides.count}
+              </div>
+              <button
+                onClick={() => setSlideIdx((s) => Math.min(slides.count, s + 1))}
+                className="px-3 py-1.5 rounded-lg text-sm border border-slate-700 hover:bg-slate-800"
+                disabled={slideIdx >= slides.count}
+                aria-label="Next slide"
+              >
+                →
+              </button>
+            </div>
+          ) : (
+            <div className="text-xs text-slate-500">No slides configured</div>
+          )}
+        </div>
+
+        <div className="bg-[#0b0f17]">
+          {slides ? (
+            <div className="w-full">
+              <img
+                key={slideSrc(slideIdx)}
+                src={slideSrc(slideIdx)}
+                alt={`Slide ${slideIdx}`}
+                className="w-full h-auto block"
+                loading="eager"
+                onError={(e) => {
+                  // If a slide path is wrong, you’ll see this message in the UI
+                  const el = e.currentTarget;
+                  el.style.display = 'none';
+                  const parent = el.parentElement;
+                  if (parent && !parent.querySelector('[data-slide-error]')) {
+                    const msg = document.createElement('div');
+                    msg.setAttribute('data-slide-error', '1');
+                    msg.className = 'p-6 text-slate-400 text-sm';
+                    msg.innerText =
+                      `Could not load: ${slideSrc(slideIdx)}\n` +
+                      `Check file names + location under /public/dataprojects/dp1/slides/.`;
+                    parent.appendChild(msg);
+                  }
+                }}
+              />
+            </div>
+          ) : (
+            <div className="aspect-video grid place-items-center text-slate-500 text-sm">Slides not configured.</div>
+          )}
+        </div>
+      </div>
+
+      {/* Map toggle + iframe */}
+      <div className={`${containerWidth} rounded-3xl bg-slate-900/60 border border-slate-800 overflow-hidden`}>
+        <div className="px-5 py-4 border-b border-slate-800 flex flex-wrap gap-3 items-center justify-between">
+          <div>
+            <div className="font-medium">Interactive Map</div>
+            <div className="text-xs text-slate-400">Toggle views below (Folium exports embedded as HTML).</div>
+          </div>
+
+          {maps.length > 1 && (
+            <div className="flex gap-2">
+              {maps.map((m) => (
+                <button
+                  key={m.key}
+                  onClick={() => setMapView(m.key)}
+                  className={`px-3 py-1.5 rounded-lg text-sm transition ${
+                    mapView === m.key
+                      ? 'bg-slate-800 ring-1 ring-slate-700'
+                      : 'border border-slate-700 hover:bg-slate-800'
+                  }`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="w-full h-[55vh] md:h-[60vh] bg-[#0b0f17]">
+          {activeMap?.src ? (
+            <iframe
+              key={activeMap.src}
+              title="Data project map"
+              src={activeMap.src}
+              className="w-full h-full block"
+              frameBorder={0}
+              loading="lazy"
+              allowFullScreen
+            />
+          ) : (
+            <div className="w-full h-full grid place-items-center text-slate-500">Map not configured.</div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------------ */
 /* Home                                 */
 /* ------------------------------------ */
 
-function Home({ setRoute }: { setRoute: (r: 'home' | 'about' | 'dashboards' | 'contact') => void }) {
+function Home({ setRoute }: { setRoute: (r: Route) => void }) {
   return (
     <section className="grid md:grid-cols-2 gap-10 items-center">
       <div>
         <h1 className="text-4xl md:text-5xl font-semibold leading-tight">Power BI, Fabric & Automation</h1>
         <p className="mt-4 text-slate-300">
-          I build pragmatic analytics with Power BI & Fabric, and automate the last mile with Power Automate + Power Apps by
-          using data INSIGHTS to create ACTION. Too often BI development ends with analysis—where I excel is taking the team a
-          step further, in acting on that insight.
+          I engineer data, build pragmatic analytics with Python, R, SQL, Power BI & Fabric, and automate the last mile with
+          notebooks and Power Automate—turning insights into action.
         </p>
-        <div className="mt-6 flex gap-3">
+
+        <div className="mt-6 flex flex-wrap gap-3">
           <button
             onClick={() => setRoute('dashboards')}
             className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-400 to-fuchsia-500 text-slate-900 font-semibold transition-all duration-200 hover:scale-[1.02] active:scale-[0.99]"
           >
             View Dashboards
+          </button>
+          <button
+            onClick={() => setRoute('data-projects')}
+            className="px-4 py-2 rounded-xl border border-slate-700 hover:bg-slate-800 transition-all duration-200 hover:translate-y-[-1px]"
+          >
+            Data Projects
           </button>
           <button
             onClick={() => setRoute('about')}
@@ -177,8 +438,10 @@ function Home({ setRoute }: { setRoute: (r: 'home' | 'about' | 'dashboards' | 'c
             About
           </button>
         </div>
+
         <TechBadges />
       </div>
+
       <HeroCard />
     </section>
   );
@@ -190,15 +453,12 @@ function HeroCard() {
       <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-cyan-500/20 to-fuchsia-500/20 blur-2xl" />
       <div className="relative">
         <h2 className="text-xl font-medium">Featured: Bayesian Marketing Experiment</h2>
-        <p className="text-slate-300 mt-2 text-sm">Showcasing PowerBI and Fabrics capabilities for bayesian analysis via Python.</p>
+        <p className="text-slate-300 mt-2 text-sm">Showcasing Power BI + Fabric capabilities for Bayesian analysis via Python.</p>
 
-        {/* Responsive embed (homepage stays as-is) */}
         <div className="mt-6 aspect-video rounded-2xl ring-1 ring-slate-700 overflow-hidden bg-[#0b0f17]">
           <iframe
             title="Bayesian Marketing Experiment"
-            src={
-              'https://app.powerbi.com/view?r=eyJrIjoiNGRhYzIyMDEtYWUyYi00ZjVjLTg2YWEtNmM5NTFkYWE5YWVkIiwidCI6IjM2ZmE0ZWQ4LTEyMjMtNGQ4MC1iYjU4LWZhYjFkNzc2ZjNmZSIsImMiOjF9&filterPaneEnabled=false&navContentPaneEnabled=false'
-            }
+            src="https://app.powerbi.com/view?r=eyJrIjoiNGRhYzIyMDEtYWUyYi00ZjVjLTg2YWEtNmM5NTFkYWE5YWVkIiwidCI6IjM2ZmE0ZWQ4LTEyMjMtNGQ4MC1iYjU4LWZhYjFkNzc2ZjNmZSIsImMiOjF9&filterPaneEnabled=false&navContentPaneEnabled=false"
             className="w-full h-full block"
             frameBorder={0}
             allowFullScreen
@@ -211,7 +471,20 @@ function HeroCard() {
 }
 
 function TechBadges() {
-  const items = ['Power BI', 'Microsoft Fabric', 'Semantic Models', 'DAX', 'M', 'SQL / T-SQL', 'Python', 'Power Automate', 'Power Apps', 'Dataverse', 'Snowflake', 'Azure'];
+  const items = [
+    'Power BI',
+    'Microsoft Fabric',
+    'Semantic Models',
+    'DAX',
+    'M',
+    'SQL / T-SQL',
+    'Python',
+    'Power Automate',
+    'Power Apps',
+    'Dataverse',
+    'Snowflake',
+    'Azure',
+  ];
   return (
     <div className="mt-8 flex flex-wrap gap-2">
       {items.map((t) => (
@@ -230,20 +503,19 @@ function TechBadges() {
 function About() {
   return (
     <section className="prose prose-invert max-w-none">
-      <h1><b> About Me</b></h1>
-      <br></br>
+      <h1><b>About Me</b></h1>
+      <br />
       <p>
-        I’m Ryan Owens, a Senior BI developer who ships clean, reliable analytics with Power BI and Microsoft Fabric. I focus on practical data models, fast
-        DAX, and a UX that helps non-technical teams act quickly, as well as advanced dashboards for the technically sound manager to easily build their own changes to visualizations. I’ve built and embedded dashboards reaching 100+ customers, automated alerting with Power Automate,
-        and launched lightweight apps in Power Apps to close the loop.  I've utilized Fabric to build data warehouses and lakehouses, extracting and transforming the data using dataflows and python notebooks to create bronze, silver, and gold layers of data structure.<br /><br />
+        I’m Ryan Owens, a Senior BI developer who ships clean, reliable analytics with Power BI and Microsoft Fabric.
+        I focus on practical data models, fast DAX, and a UX that helps non-technical teams act quickly.
       </p>
+
       <h3>Core Skill Set</h3>
       <ul>
-        <li>Power BI & Fabric: data modeling (star schemas, semantic models), DAX/M, RLS, performance tuning, lakehouses using medallion architecture</li>
-        <li>Automation & Apps: Power Automate (KPI alerts, distribution, workflow orchestration), Power Apps (mobile/Teams apps)</li>
-        <li>Data Engineering: SQL/T-SQL (SPs, indexing), Python/PySpark pipelines, lakehouse patterns</li>
-        <li>Platforms & Sources: SQL Server, Snowflake, Dataverse; integrations with Jira, Salesforce, MongoDB, Smartsheet; Azure & AWS</li>
-        <li>Tooling: Tableau & SAS (prior work), AI copilots (Cursor, ChatGPT) to accelerate delivery</li>
+        <li>Power BI & Fabric: data modeling (star schemas, semantic models), DAX/M, RLS, performance tuning</li>
+        <li>Automation & Apps: Power Automate workflows, Power Apps prototypes</li>
+        <li>Data Engineering: SQL/T-SQL, Python pipelines</li>
+        <li>Platforms: SQL Server, Snowflake, Dataverse; Azure</li>
       </ul>
 
       <p className="mt-6">
@@ -263,23 +535,27 @@ function About() {
 
 function useIsMobile(breakpoint = 640) {
   const [isMobile, setIsMobile] = useState(false);
+
   useEffect(() => {
     const mql = window.matchMedia(`(max-width: ${breakpoint}px)`);
+
     const onChange = (e: MediaQueryListEvent | MediaQueryList) => {
-      // Support Safari <16 oddities
       const matches = 'matches' in e ? (e as MediaQueryListEvent).matches : (e as MediaQueryList).matches;
       setIsMobile(matches);
     };
+
     setIsMobile(mql.matches);
     mql.addEventListener?.('change', onChange);
-    // @ts-ignore - for older Safari
+    // @ts-ignore
     mql.addListener?.(onChange);
+
     return () => {
       mql.removeEventListener?.('change', onChange);
       // @ts-ignore
       mql.removeListener?.(onChange);
     };
   }, [breakpoint]);
+
   return isMobile;
 }
 
@@ -287,7 +563,13 @@ function CardThumbnail({ title, preview }: { title: string; preview?: string }) 
   return (
     <div className="aspect-video rounded-xl ring-1 ring-slate-800 overflow-hidden bg-slate-950/60">
       {preview ? (
-        <img src={preview} alt={title} loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-[1.01]" />
+        <img
+          src={preview}
+          alt={title}
+          loading="lazy"
+          decoding="async"
+          className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-[1.01]"
+        />
       ) : (
         <div className="w-full h-full grid place-items-center text-slate-500 text-xs">Preview</div>
       )}
@@ -295,9 +577,8 @@ function CardThumbnail({ title, preview }: { title: string; preview?: string }) 
   );
 }
 
-/** Mini preview that visually fits-to-card, hides panes, and matches dark theme */
 function PreviewFrame({ title, src, scale = 0.18 }: { title: string; src: string; scale?: number }) {
-  const inv = 1 / scale; // make iframe larger, then scale it down
+  const inv = 1 / scale;
   return (
     <div className="aspect-video rounded-xl bg-slate-900 ring-1 ring-slate-800 overflow-hidden">
       <div className="relative w-full h-full bg-[#0b0f17]">
@@ -313,7 +594,7 @@ function PreviewFrame({ title, src, scale = 0.18 }: { title: string; src: string
             transformOrigin: 'top left',
             display: 'block',
             border: '0',
-            pointerEvents: 'none', // allow card click
+            pointerEvents: 'none',
             backgroundColor: '#0b0f17',
           }}
           loading="lazy"
@@ -334,10 +615,7 @@ function SmartCardPreview({
   preview?: string;
   isMobile: boolean;
 }) {
-  // If no src (under construction), show simple thumbnail/placeholder (or "Preview")
   if (!src) return <CardThumbnail title={title} preview={preview} />;
-
-  // Mobile = image only; Desktop = live mini iframe
   return isMobile ? <CardThumbnail title={title} preview={preview} /> : <PreviewFrame title={title} src={src} />;
 }
 
@@ -350,11 +628,11 @@ function DashboardList({
   onOpen,
   setRoute,
 }: {
-  reports: { id: string; title: string; src: string; preview?: string }[];
+  reports: Report[];
   onOpen: (id: string) => void;
-  setRoute: (r: 'home' | 'about' | 'dashboards' | 'contact') => void;
+  setRoute: (r: Route) => void;
 }) {
-  const isMobile = useIsMobile(640); // Tailwind's sm breakpoint
+  const isMobile = useIsMobile(640);
 
   return (
     <section>
@@ -365,14 +643,11 @@ function DashboardList({
             Showcasing a variety of compelling and interactive dashboards.
             <br />
             <br />
-            While some BI Developers are content with reacting to data, we prefer to act on it.  Reach out in the{' '}
-            <button
-              onClick={() => setRoute('contact')}
-              className="underline decoration-slate-600 hover:decoration-slate-300"
-            >
+            Reach out in the{' '}
+            <button onClick={() => setRoute('contact')} className="underline decoration-slate-600 hover:decoration-slate-300">
               Contact
             </button>{' '}
-            section, to discover how to create new efficiencies and automations to drive metrics in a positive direction.
+            section to discuss analytics + automation work.
           </p>
         </div>
       </div>
@@ -386,7 +661,6 @@ function DashboardList({
           >
             <div className="relative">
               <SmartCardPreview title={r.title} src={r.src} preview={r.preview} isMobile={isMobile} />
-              {/* Hover hint */}
               <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-gradient-to-t from-slate-900/50 via-transparent to-transparent" />
             </div>
 
