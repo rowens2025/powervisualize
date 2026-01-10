@@ -178,40 +178,42 @@ export default function FloodMap({
     divRef.current.appendChild(boxEl);
     boxElementRef.current = boxEl;
 
-    map.on("load", () => {
+      map.on("load", () => {
       console.log("🗺️ Map loaded, adding layers...");
-      const buildingsSource = map.getSource("buildings");
-      const floodzonesSource = map.getSource("floodzones");
-      const ntaSource = map.getSource("nta");
       
-      console.log("📊 Source status:", {
-        buildings: buildingsSource ? "✅ loaded" : "❌ not loaded",
-        floodzones: floodzonesSource ? "✅ loaded" : "❌ not loaded",
-        nta: ntaSource ? "✅ loaded" : "❌ not loaded",
-      });
-
-      if (buildingsSource) {
-        console.log("🏢 Buildings source type:", buildingsSource.type);
-      }
-      if (floodzonesSource) {
-        console.log("🌊 Floodzones source type:", floodzonesSource.type);
-      }
-      if (ntaSource) {
-        console.log("🗺️ NTA source type:", ntaSource.type);
-      }
-
       map.on("error", (e) => {
         console.error("🗺️ Map error:", e);
         if (e.error?.message) {
           console.error("Error message:", e.error.message);
         }
+        if ((e as any).sourceId) {
+          console.error("Failed source:", (e as any).sourceId);
+        }
       });
 
       map.on("data", (e) => {
-        if (e.dataType === "source" && (e as any).isSourceLoaded && (e as any).sourceId) {
+        if (e.dataType === "source") {
           const sourceId = (e as any).sourceId;
-          console.log(`✅ Source loaded: ${sourceId}`, {
-            type: map.getSource(sourceId)?.type,
+          if (sourceId) {
+            const source = map.getSource(sourceId);
+            if (source) {
+              console.log(`📊 Source event: ${sourceId}`, {
+                type: source.type,
+                isSourceLoaded: (e as any).isSourceLoaded,
+                dataType: e.dataType,
+              });
+            }
+          }
+        }
+      });
+
+      map.on("sourcedata", (e) => {
+        if (e.isSourceLoaded && e.sourceId) {
+          console.log(`✅ Source loaded successfully: ${e.sourceId}`);
+        } else if (e.source && e.source.type) {
+          console.log(`⚠️ Source data event: ${e.sourceId}`, {
+            type: e.source.type,
+            isSourceLoaded: e.isSourceLoaded,
           });
         }
       });
