@@ -81,6 +81,7 @@ export default function FloodMap({
       } else {
         map.getCanvas().style.cursor = "";
         map.boxZoom.enable();
+        map.dragPan.enable();
       }
     }
     if (onLassoModeChange) {
@@ -158,6 +159,8 @@ export default function FloodMap({
       style: style as any,
       center: [-73.9778, 40.7067],
       zoom: 10,
+      boxZoom: false,
+      dragRotate: false,
     });
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: true }), "bottom-right");
@@ -459,8 +462,8 @@ export default function FloodMap({
         }
       });
 
-        map.on("mousedown", (e) => {
-        if (lassoModeRef.current && e.originalEvent.button === 0) {
+      map.on("mousedown", (e) => {
+        if (lassoModeRef.current && e.originalEvent.button === 0 && !e.originalEvent.shiftKey && !e.originalEvent.ctrlKey && !e.originalEvent.metaKey) {
           e.preventDefault();
           e.originalEvent.stopPropagation();
           isDraggingRef.current = true;
@@ -476,14 +479,13 @@ export default function FloodMap({
           }
           map.dragPan.disable();
           map.boxZoom.disable();
-        } else if (lassoModeRef.current) {
-          e.preventDefault();
-          e.originalEvent.stopPropagation();
         }
       });
 
       map.on("mousemove", (e) => {
         if (lassoModeRef.current && isDraggingRef.current && boxStartRef.current && boxElementRef.current) {
+          e.preventDefault();
+          e.originalEvent.stopPropagation();
           const width = e.point.x - boxStartRef.current.x;
           const height = e.point.y - boxStartRef.current.y;
           boxElementRef.current.style.width = `${Math.abs(width)}px`;
@@ -495,6 +497,8 @@ export default function FloodMap({
 
       map.on("mouseup", (e) => {
         if (lassoModeRef.current && isDraggingRef.current && boxStartRef.current) {
+          e.preventDefault();
+          e.originalEvent.stopPropagation();
           isDraggingRef.current = false;
           const startPoint: maplibregl.PointLike = [
             boxStartRef.current.x,
@@ -553,7 +557,9 @@ export default function FloodMap({
           isBoxSelectingRef.current = false;
           boxStartRef.current = null;
           map.dragPan.enable();
-          map.boxZoom.enable();
+          if (!lassoModeRef.current) {
+            map.boxZoom.enable();
+          }
         }
       });
 
@@ -565,8 +571,8 @@ export default function FloodMap({
           }
           isBoxSelectingRef.current = false;
           boxStartRef.current = null;
-          map.dragPan.enable();
           if (!lassoModeRef.current) {
+            map.dragPan.enable();
             map.boxZoom.enable();
           }
         }
