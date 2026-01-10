@@ -4,8 +4,7 @@ dist
 .vscode
 *.log
 
-# Raw data files - too large for git
-*.pmtiles
+# Large raw data files (use Git LFS for these)
 *.mbtiles
 *.geojson
 *.geopackage
