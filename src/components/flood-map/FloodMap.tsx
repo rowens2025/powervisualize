@@ -89,6 +89,18 @@ export default function FloodMap({
   const [showFloodzones, setShowFloodzones] = useState(initialShowFloodzones);
   const [showNTA, setShowNTA] = useState(initialShowNTA);
 
+  useEffect(() => {
+    setShowBuildings(initialShowBuildings);
+  }, [initialShowBuildings]);
+
+  useEffect(() => {
+    setShowFloodzones(initialShowFloodzones);
+  }, [initialShowFloodzones]);
+
+  useEffect(() => {
+    setShowNTA(initialShowNTA);
+  }, [initialShowNTA]);
+
   const isBoxSelectingRef = useRef(false);
   const boxStartRef = useRef<{ x: number; y: number } | null>(null);
   const boxElementRef = useRef<HTMLDivElement | null>(null);
@@ -99,6 +111,12 @@ export default function FloodMap({
 
     const protocol = new Protocol();
     (maplibregl as any).addProtocol("pmtiles", protocol.tile);
+
+    console.log("🗺️ Initializing map with PMTiles sources:", {
+      buildings: buildingsPmtilesUrl,
+      floodzones: floodzonesPmtilesUrl,
+      nta: ntaPmtilesUrl,
+    });
 
     const style = {
       version: 8,
@@ -149,6 +167,42 @@ export default function FloodMap({
     boxElementRef.current = boxEl;
 
     map.on("load", () => {
+      console.log("🗺️ Map loaded, adding layers...");
+      const buildingsSource = map.getSource("buildings");
+      const floodzonesSource = map.getSource("floodzones");
+      const ntaSource = map.getSource("nta");
+      
+      console.log("📊 Source status:", {
+        buildings: buildingsSource ? "✅ loaded" : "❌ not loaded",
+        floodzones: floodzonesSource ? "✅ loaded" : "❌ not loaded",
+        nta: ntaSource ? "✅ loaded" : "❌ not loaded",
+      });
+
+      if (buildingsSource) {
+        console.log("🏢 Buildings source type:", buildingsSource.type);
+      }
+      if (floodzonesSource) {
+        console.log("🌊 Floodzones source type:", floodzonesSource.type);
+      }
+      if (ntaSource) {
+        console.log("🗺️ NTA source type:", ntaSource.type);
+      }
+
+      map.on("error", (e) => {
+        console.error("🗺️ Map error:", e);
+        if (e.error?.message) {
+          console.error("Error message:", e.error.message);
+        }
+      });
+
+      map.on("data", (e) => {
+        if (e.dataType === "source" && e.isSourceLoaded) {
+          console.log(`✅ Source loaded: ${e.sourceId}`, {
+            type: map.getSource(e.sourceId)?.type,
+          });
+        }
+      });
+
       map.addLayer({
         id: "floodzones-fill",
         type: "fill",
@@ -157,6 +211,9 @@ export default function FloodMap({
         paint: {
           "fill-color": COLOR_FLOODZONE_FILL,
           "fill-outline-color": COLOR_FLOODZONE_OUTLINE,
+        },
+        layout: {
+          visibility: initialShowFloodzones ? "visible" : "none",
         },
       });
 
@@ -169,6 +226,9 @@ export default function FloodMap({
           "line-color": COLOR_FLOODZONE_OUTLINE,
           "line-width": 1,
         },
+        layout: {
+          visibility: initialShowFloodzones ? "visible" : "none",
+        },
       });
 
       map.addLayer({
@@ -180,6 +240,9 @@ export default function FloodMap({
           "line-color": "#ffffff",
           "line-width": 2.7,
           "line-dasharray": [2, 2],
+        },
+        layout: {
+          visibility: initialShowNTA ? "visible" : "none",
         },
       });
 
@@ -200,6 +263,9 @@ export default function FloodMap({
             5, 1.0,
           ],
         },
+        layout: {
+          visibility: initialShowBuildings ? "visible" : "none",
+        },
       });
 
       map.addLayer({
@@ -210,6 +276,9 @@ export default function FloodMap({
         paint: {
           "line-color": "rgba(255,255,255,0.33)",
           "line-width": 0.33,
+        },
+        layout: {
+          visibility: initialShowBuildings ? "visible" : "none",
         },
       });
 
