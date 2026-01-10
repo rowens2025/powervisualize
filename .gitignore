@@ -3,3 +3,28 @@ node_modules
 dist
 .vscode
 *.log
+
+# Raw data files - too large for git
+*.pmtiles
+*.mbtiles
+*.geojson
+*.geopackage
+*.gpkg
+*.shp
+*.shx
+*.dbf
+*.prj
+*.cpg
+*.parquet
+*.feather
+*.arrow
+
+# Data files in project directories (CSV, Excel, large JSON)
+public/dataprojects/**/*.csv
+public/dataprojects/**/*.xlsx
+public/dataprojects/**/*.xls
+
+# Keep specific files needed for the app
+!public/dataprojects/dp1/kpi_data.json
+!public/dataprojects/dp1/slides/
+!public/previews/

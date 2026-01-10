@@ -1,4 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import FloodMap from './components/flood-map/FloodMap';
+import KPICards from './components/flood-map/KPICards';
+import MapControls from './components/flood-map/MapControls';
+import type { ScenarioKPIs } from './components/flood-map/types';
 
 type Route = 'home' | 'about' | 'dashboards' | 'data-projects' | 'contact';
 
@@ -21,6 +25,7 @@ export default function App() {
   const [route, setRoute] = useState<Route>('home');
   const [openReport, setOpenReport] = useState<string | null>(null);
   const [openDataProject, setOpenDataProject] = useState<string | null>(null);
+  const [openDashboard, setOpenDashboard] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const reports: Report[] = [
@@ -71,7 +76,7 @@ export default function App() {
       preview: '/previews/dp1.png', // you created this
       slides: {
         basePath: '/dataprojects/dp1/slides',
-        count: 18,
+        count: 22,
         prefix: 'Slide',
         ext: 'PNG',
       },
@@ -83,7 +88,7 @@ export default function App() {
     { id: 'uc', title: 'Under Construction' },
   ];
 
-  const navKeys: Route[] = ['home', 'about', 'dashboards', 'data-projects', 'contact'];
+  const navKeys: Route[] = ['home', 'about', 'data-projects', 'dashboards', 'contact'];
 
   function go(routeKey: Route) {
     setRoute(routeKey);
@@ -92,10 +97,38 @@ export default function App() {
     setMenuOpen(false);
   }
 
+  const isFloodDashboard = route === 'data-projects' && openDashboard && openDataProject === 'dp1';
+  const [headerHovered, setHeaderHovered] = useState(false);
+
   return (
     <div className="min-h-screen bg-[#0b0f17] text-slate-100 selection:bg-fuchsia-500/30 selection:text-slate-100">
       {/* ===== Header ===== */}
-      <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-slate-900/60 bg-slate-900/80 border-b border-slate-800">
+      <div 
+        className={`fixed top-0 left-0 right-0 z-40 transition-transform duration-300 ease-in-out ${
+          isFloodDashboard 
+            ? headerHovered 
+              ? 'translate-y-0' 
+              : '-translate-y-[calc(100%-8px)]'
+            : 'translate-y-0'
+        }`}
+        style={{ paddingBottom: isFloodDashboard && !headerHovered ? '0' : '0' }}
+      >
+        <div 
+          className="bg-slate-700/50 w-full cursor-pointer hover:bg-slate-600/60 transition-colors relative z-50" 
+          style={{ height: '8px' }}
+          onMouseEnter={() => isFloodDashboard && setHeaderHovered(true)}
+        />
+        <div 
+          className="absolute top-0 left-0 right-0 pointer-events-auto z-40"
+          style={{ height: '128px', top: '-128px' }}
+          onMouseEnter={() => isFloodDashboard && setHeaderHovered(true)}
+        />
+        <header 
+          className="backdrop-blur supports-[backdrop-filter]:bg-slate-900/60 bg-slate-900/80 border-b border-slate-800" 
+          style={{ marginTop: 0 }}
+          onMouseEnter={() => isFloodDashboard && setHeaderHovered(true)}
+          onMouseLeave={() => isFloodDashboard && setHeaderHovered(false)}
+        >
         <div className="max-w-6xl mx-auto px-4">
           <div className="h-14 flex items-center justify-between">
             {/* Brand */}
@@ -162,10 +195,11 @@ export default function App() {
             </div>
           )}
         </div>
-      </header>
+        </header>
+      </div>
 
-      <main className="max-w-6xl mx-auto px-4 py-10">
-        {route === 'home' && <Home setRoute={go} />}
+      <main className={`${isFloodDashboard ? 'w-full' : 'max-w-6xl'} mx-auto ${isFloodDashboard ? 'px-4 py-0' : 'px-4 py-10'}`}>
+        {route === 'home' && <Home setRoute={go} setOpenDataProject={setOpenDataProject} />}
 
         {route === 'about' && <About />}
 
@@ -178,10 +212,17 @@ export default function App() {
 
         {route === 'data-projects' &&
           (openDataProject ? (
-            <DataProjectViewer
-              project={dataProjects.find((p) => p.id === openDataProject)!}
-              onBack={() => setOpenDataProject(null)}
-            />
+            openDashboard && openDataProject === 'dp1' ? (
+              <FloodDashboardViewer
+                onBack={() => setOpenDashboard(false)}
+              />
+            ) : (
+              <DataProjectViewer
+                project={dataProjects.find((p) => p.id === openDataProject)!}
+                onBack={() => setOpenDataProject(null)}
+                onOpenDashboard={() => setOpenDashboard(true)}
+              />
+            )
           ) : (
             <DataProjectList projects={dataProjects} onOpen={setOpenDataProject} />
           ))}
@@ -252,7 +293,7 @@ function DataProjectList({
   );
 }
 
-function DataProjectViewer({ project, onBack }: { project: DataProject; onBack: () => void }) {
+function DataProjectViewer({ project, onBack, onOpenDashboard }: { project: DataProject; onBack: () => void; onOpenDashboard?: () => void }) {
   const maps = project.maps ?? [];
   const [mapView, setMapView] = useState<'buildings' | 'nta'>(maps[0]?.key ?? 'buildings');
   const activeMap = maps.find((m) => m.key === mapView) ?? maps[0];
@@ -264,7 +305,6 @@ function DataProjectViewer({ project, onBack }: { project: DataProject; onBack: 
     if (!slides) return '';
     const prefix = slides.prefix ?? 'Slide';
     const ext = slides.ext ?? 'png';
-    // Your files are named Slide1.png, Slide2.png, ... Slide18.png
     return `${slides.basePath}/${prefix}${i}.${ext}`;
   }
 
@@ -283,14 +323,37 @@ function DataProjectViewer({ project, onBack }: { project: DataProject; onBack: 
         <div />
       </div>
 
-      {/* Intro (placeholder copy) */}
       <div className={`${containerWidth} max-w-3xl`}>
         <p className="text-slate-300">
-          Project that combines 3 disparate datasets on polygon shape and centroids to map them together and create an entirely new and robust dataset that is servicable across various industries and use cases.
+          Project that joins three disparate geospatial datasets on polygon shape, mapping them together to create an entirely new and robust dataset that is servicable across various industries and use cases.  Data extraction and transformation done in Python, visualization of the interactive dashboard completed in React.
         </p>
       </div>
 
-      {/* Slides (WORKING slideshow) */}
+      {project.id === 'dp1' && (
+        <div className={`${containerWidth} rounded-3xl bg-slate-900/60 border border-slate-800 overflow-hidden`}>
+          <div className="px-5 py-4 border-b border-slate-800 flex flex-wrap gap-3 items-center justify-between">
+            <div>
+              <div className="font-medium">NYC Flood Vulnerability Map</div>
+              <div className="text-xs text-slate-400">Click to load interactive React dashboard of cleansed and enriched geospatial dataset</div>
+            </div>
+          </div>
+          <div className="bg-[#0b0f17] relative group cursor-pointer" onClick={() => onOpenDashboard?.()}>
+            <img
+              src="/previews/dp1.png"
+              alt="NYC Flood Vulnerability Map Preview"
+              className="w-full h-auto block"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-slate-900/80 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+              <div className="text-white text-center px-6">
+                <div className="text-lg font-semibold mb-2">Click here to load interactive React dashboard</div>
+                <div className="text-sm text-slate-300">of cleansed and enriched geospatial dataset</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className={`${containerWidth} rounded-3xl bg-slate-900/60 border border-slate-800 overflow-hidden`}>
         <div className="px-5 py-4 border-b border-slate-800 flex flex-wrap gap-3 items-center justify-between">
           <div>
@@ -408,7 +471,7 @@ function DataProjectViewer({ project, onBack }: { project: DataProject; onBack: 
 /* Home                                 */
 /* ------------------------------------ */
 
-function Home({ setRoute }: { setRoute: (r: Route) => void }) {
+function Home({ setRoute, setOpenDataProject }: { setRoute: (r: Route) => void; setOpenDataProject: (id: string) => void }) {
   return (
     <section className="grid md:grid-cols-2 gap-10 items-center">
       <div>
@@ -442,29 +505,38 @@ function Home({ setRoute }: { setRoute: (r: Route) => void }) {
         <TechBadges />
       </div>
 
-      <HeroCard />
+      <HeroCard setRoute={setRoute} setOpenDataProject={setOpenDataProject} />
     </section>
   );
 }
 
-function HeroCard() {
+function HeroCard({ setRoute, setOpenDataProject }: { setRoute: (r: Route) => void; setOpenDataProject: (id: string) => void }) {
   return (
     <div className="relative rounded-3xl p-6 md:p-10 bg-gradient-to-br from-slate-900 to-slate-800 ring-1 ring-slate-700 shadow-2xl">
       <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-cyan-500/20 to-fuchsia-500/20 blur-2xl" />
       <div className="relative">
-        <h2 className="text-xl font-medium">Featured: Bayesian Marketing Experiment</h2>
-        <p className="text-slate-300 mt-2 text-sm">Showcasing Power BI + Fabric capabilities for Bayesian analysis via Python.</p>
+        <h2 className="text-xl font-medium">Featured: NYC Flood Risk: Buildings vs Neighborhoods</h2>
+        <p className="text-slate-300 mt-2 text-sm">Interactive flood vulnerability mapping with enriched geospatial dataset visualization.</p>
 
-        <div className="mt-6 aspect-video rounded-2xl ring-1 ring-slate-700 overflow-hidden bg-[#0b0f17]">
-          <iframe
-            title="Bayesian Marketing Experiment"
-            src="https://app.powerbi.com/view?r=eyJrIjoiNGRhYzIyMDEtYWUyYi00ZjVjLTg2YWEtNmM5NTFkYWE5YWVkIiwidCI6IjM2ZmE0ZWQ4LTEyMjMtNGQ4MC1iYjU4LWZhYjFkNzc2ZjNmZSIsImMiOjF9&filterPaneEnabled=false&navContentPaneEnabled=false"
-            className="w-full h-full block"
-            frameBorder={0}
-            allowFullScreen
+        <button
+          onClick={() => {
+            setRoute('data-projects');
+            setOpenDataProject('dp1');
+          }}
+          className="mt-6 w-full aspect-video rounded-2xl ring-1 ring-slate-700 overflow-hidden bg-[#0b0f17] group cursor-pointer relative"
+        >
+          <img
+            src="/previews/dp1.png"
+            alt="NYC Flood Vulnerability Map"
+            className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-[1.01]"
             loading="lazy"
           />
-        </div>
+          <div className="absolute inset-0 bg-slate-900/80 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+            <div className="text-white text-center px-6">
+              <div className="text-lg font-semibold mb-2">Click to view project →</div>
+            </div>
+          </div>
+        </button>
       </div>
     </div>
   );
@@ -712,6 +784,128 @@ function ReportViewer({ report, onBack }: { report: { title: string; src: string
           Add your report embed URL to <code>reports</code> in App.tsx
         </div>
       )}
+    </section>
+  );
+}
+
+/* ------------------------------------ */
+/* Flood Dashboard Viewer               */
+/* ------------------------------------ */
+
+function FloodDashboardViewer({ onBack }: { onBack: () => void }) {
+  const [kpiData, setKpiData] = useState<ScenarioKPIs | null>(null);
+  const [scenario, setScenario] = useState('ss_cur');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedNTA, setSelectedNTA] = useState<string | undefined>();
+  const [selectedZone, setSelectedZone] = useState<string>('New York City');
+  const [selectionStats, setSelectionStats] = useState<any>(undefined);
+  const [showBuildings, setShowBuildings] = useState(true);
+  const [showFloodzones, setShowFloodzones] = useState(true);
+  const [showNTA, setShowNTA] = useState(true);
+  const [lassoMode, setLassoMode] = useState(false);
+
+  useEffect(() => {
+    fetch('/dataprojects/dp1/kpi_data.json')
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then(data => {
+        console.log('✅ KPI Data loaded successfully:', data);
+        console.log('📊 Available scenarios:', Object.keys(data).filter(k => k !== '__labels__'));
+        console.log('📈 Sample scenario data (ss_cur):', data.ss_cur);
+        setKpiData(data as ScenarioKPIs);
+      })
+      .catch(err => {
+        console.error('❌ Failed to load KPI data:', err);
+        console.error('Error details:', err.message);
+      });
+  }, []);
+
+  const handleSelectionChange = useCallback((
+    ids: Set<string>,
+    nta?: string,
+    building?: { objectid: string; name?: string },
+    borough?: string,
+    custom?: any,
+    stats?: any,
+    zone?: string
+  ) => {
+    setSelectedIds(ids);
+    setSelectedNTA(nta);
+    setSelectionStats(stats);
+    setSelectedZone(zone || 'New York City');
+  }, []);
+
+
+  if (!kpiData) {
+    return (
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={onBack}
+            className="px-3 py-2 rounded-xl border border-slate-700 hover:bg-slate-800 transition-all duration-200 hover:translate-y-[-1px]"
+          >
+            Back
+          </button>
+          <h2 className="text-lg font-semibold">NYC Flood Vulnerability Map</h2>
+          <div />
+        </div>
+        <div className="w-full rounded-2xl ring-1 ring-slate-800 grid place-items-center text-slate-400" style={{ height: '75vh' }}>
+          Loading dashboard...
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="relative" style={{ minHeight: '100vh' }}>
+      <div className="flex items-center justify-between mb-3" style={{ paddingTop: '28px', paddingLeft: '1rem', paddingRight: '1rem' }}>
+        <button
+          onClick={onBack}
+          className="px-3 rounded-xl border border-slate-700 hover:bg-slate-800 transition-all duration-200 hover:translate-y-[-1px] text-sm"
+          style={{ paddingTop: '6.8px', paddingBottom: '6.8px' }}
+        >
+          Back
+        </button>
+        <h2 className="text-lg font-semibold">NYC Flood Vulnerability Map</h2>
+        <div />
+      </div>
+
+      <div className="w-full rounded-2xl ring-1 ring-slate-800 overflow-hidden bg-[#0b0f17]" style={{ height: 'calc(100vh - 92px)' }}>
+        <div className="relative w-full h-full">
+          <FloodMap
+            kpiData={kpiData}
+            initialScenario={scenario}
+            showBuildings={showBuildings}
+            showFloodzones={showFloodzones}
+            showNTA={showNTA}
+            lassoMode={lassoMode}
+            onLassoModeChange={setLassoMode}
+            onSelectionChange={handleSelectionChange}
+          />
+          <KPICards
+            kpiData={kpiData}
+            scenario={scenario}
+            selectedZone={selectedZone}
+            selectionStats={selectionStats}
+          />
+          <MapControls
+            scenario={scenario}
+            onScenarioChange={setScenario}
+            showBuildings={showBuildings}
+            onToggleBuildings={() => setShowBuildings(!showBuildings)}
+            showFloodzones={showFloodzones}
+            onToggleFloodzones={() => setShowFloodzones(!showFloodzones)}
+            showNTA={showNTA}
+            onToggleNTA={() => setShowNTA(!showNTA)}
+            lassoMode={lassoMode}
+            onToggleLasso={() => setLassoMode(!lassoMode)}
+          />
+        </div>
+      </div>
     </section>
   );
 }
