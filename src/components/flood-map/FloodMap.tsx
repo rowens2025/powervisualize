@@ -40,9 +40,9 @@ interface FloodMapProps {
 
 export default function FloodMap({
   kpiData,
-  buildingsPmtilesUrl = "pmtiles://dataprojects/dp1/buildings.pmtiles",
-  floodzonesPmtilesUrl = "pmtiles://dataprojects/dp1/floodzones.pmtiles",
-  ntaPmtilesUrl = "pmtiles://dataprojects/dp1/nta.pmtiles",
+  buildingsPmtilesUrl,
+  floodzonesPmtilesUrl,
+  ntaPmtilesUrl,
   buildingsSourceLayer = "buildings_wgs84_fvi",
   floodzonesSourceLayer = "floodzones_wgs84",
   ntaSourceLayer = "nta_wgs84",
@@ -54,6 +54,12 @@ export default function FloodMap({
   lassoMode: externalLassoMode = false,
   onLassoModeChange,
 }: FloodMapProps) {
+  const pmtilesBaseUrl = import.meta.env.VITE_PMTILES_BASE_URL || "https://pub-27827c1d284447a28c66f73208ff663e.r2.dev";
+  
+  const defaultBuildingsUrl = buildingsPmtilesUrl || `pmtiles://${pmtilesBaseUrl}/buildings.pmtiles`;
+  const defaultFloodzonesUrl = floodzonesPmtilesUrl || `pmtiles://${pmtilesBaseUrl}/floodzones.pmtiles`;
+  const defaultNtaUrl = ntaPmtilesUrl || `pmtiles://${pmtilesBaseUrl}/nta.pmtiles`;
+  
   const mapRef = useRef<maplibregl.Map | null>(null);
   const divRef = useRef<HTMLDivElement>(null);
   const [scenario, setScenario] = useState(initialScenario);
@@ -122,9 +128,10 @@ export default function FloodMap({
     }
 
     console.log("🗺️ Initializing map with PMTiles sources:", {
-      buildings: buildingsPmtilesUrl,
-      floodzones: floodzonesPmtilesUrl,
-      nta: ntaPmtilesUrl,
+      buildings: defaultBuildingsUrl,
+      floodzones: defaultFloodzonesUrl,
+      nta: defaultNtaUrl,
+      baseUrl: pmtilesBaseUrl,
       origin: typeof window !== 'undefined' ? window.location.origin : 'N/A',
     });
 
@@ -139,16 +146,16 @@ export default function FloodMap({
         },
         buildings: {
           type: "vector",
-          url: buildingsPmtilesUrl,
+          url: defaultBuildingsUrl,
           promoteId: "objectid",
         },
         floodzones: {
           type: "vector",
-          url: floodzonesPmtilesUrl,
+          url: defaultFloodzonesUrl,
         },
         nta: {
           type: "vector",
-          url: ntaPmtilesUrl,
+          url: defaultNtaUrl,
         },
       },
       layers: [{ id: "basemap", type: "raster", source: "basemap" }],
