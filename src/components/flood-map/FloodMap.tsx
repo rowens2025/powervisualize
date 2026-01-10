@@ -78,11 +78,9 @@ export default function FloodMap({
       if (externalLassoMode) {
         map.getCanvas().style.cursor = "crosshair";
         map.boxZoom.disable();
-        map.keyboard.disable();
       } else {
         map.getCanvas().style.cursor = "";
         map.boxZoom.enable();
-        map.keyboard.enable();
       }
     }
     if (onLassoModeChange) {
@@ -207,9 +205,10 @@ export default function FloodMap({
       });
 
       map.on("data", (e) => {
-        if (e.dataType === "source" && e.isSourceLoaded) {
-          console.log(`✅ Source loaded: ${e.sourceId}`, {
-            type: map.getSource(e.sourceId)?.type,
+        if (e.dataType === "source" && (e as any).isSourceLoaded && (e as any).sourceId) {
+          const sourceId = (e as any).sourceId;
+          console.log(`✅ Source loaded: ${sourceId}`, {
+            type: map.getSource(sourceId)?.type,
           });
         }
       });
@@ -463,7 +462,7 @@ export default function FloodMap({
         map.on("mousedown", (e) => {
         if (lassoModeRef.current && e.originalEvent.button === 0) {
           e.preventDefault();
-          e.stopPropagation();
+          e.originalEvent.stopPropagation();
           isDraggingRef.current = true;
           const startPoint = { x: e.point.x, y: e.point.y };
           boxStartRef.current = startPoint;
@@ -479,7 +478,7 @@ export default function FloodMap({
           map.boxZoom.disable();
         } else if (lassoModeRef.current) {
           e.preventDefault();
-          e.stopPropagation();
+          e.originalEvent.stopPropagation();
         }
       });
 
