@@ -77,8 +77,12 @@ export default function FloodMap({
     if (map) {
       if (externalLassoMode) {
         map.getCanvas().style.cursor = "crosshair";
+        map.boxZoom.disable();
+        map.keyboard.disable();
       } else {
         map.getCanvas().style.cursor = "";
+        map.boxZoom.enable();
+        map.keyboard.enable();
       }
     }
     if (onLassoModeChange) {
@@ -449,9 +453,10 @@ export default function FloodMap({
         }
       });
 
-      map.on("mousedown", (e) => {
+        map.on("mousedown", (e) => {
         if (lassoModeRef.current && e.originalEvent.button === 0) {
           e.preventDefault();
+          e.stopPropagation();
           isDraggingRef.current = true;
           const startPoint = { x: e.point.x, y: e.point.y };
           boxStartRef.current = startPoint;
@@ -464,6 +469,10 @@ export default function FloodMap({
             boxElementRef.current.style.height = "0px";
           }
           map.dragPan.disable();
+          map.boxZoom.disable();
+        } else if (lassoModeRef.current) {
+          e.preventDefault();
+          e.stopPropagation();
         }
       });
 
@@ -538,6 +547,7 @@ export default function FloodMap({
           isBoxSelectingRef.current = false;
           boxStartRef.current = null;
           map.dragPan.enable();
+          map.boxZoom.enable();
         }
       });
 
@@ -550,6 +560,9 @@ export default function FloodMap({
           isBoxSelectingRef.current = false;
           boxStartRef.current = null;
           map.dragPan.enable();
+          if (!lassoModeRef.current) {
+            map.boxZoom.enable();
+          }
         }
       });
 
