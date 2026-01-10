@@ -98,6 +98,7 @@ export default function App() {
   }
 
   const isFloodDashboard = route === 'data-projects' && openDashboard && openDataProject === 'dp1';
+  const isDataProject1 = route === 'data-projects' && openDataProject === 'dp1';
   const [headerHovered, setHeaderHovered] = useState(false);
 
   return (
@@ -105,29 +106,29 @@ export default function App() {
       {/* ===== Header ===== */}
       <div 
         className={`fixed top-0 left-0 right-0 z-40 transition-transform duration-300 ease-in-out ${
-          isFloodDashboard 
+          isDataProject1 
             ? headerHovered 
               ? 'translate-y-0' 
               : '-translate-y-[calc(100%-8px)]'
             : 'translate-y-0'
         }`}
-        style={{ paddingBottom: isFloodDashboard && !headerHovered ? '0' : '0' }}
+        style={{ paddingBottom: isDataProject1 && !headerHovered ? '0' : '0' }}
       >
         <div 
           className="bg-slate-700/50 w-full cursor-pointer hover:bg-slate-600/60 transition-colors relative z-50" 
           style={{ height: '8px' }}
-          onMouseEnter={() => isFloodDashboard && setHeaderHovered(true)}
+          onMouseEnter={() => isDataProject1 && setHeaderHovered(true)}
         />
         <div 
           className="absolute top-0 left-0 right-0 pointer-events-auto z-40"
           style={{ height: '128px', top: '-128px' }}
-          onMouseEnter={() => isFloodDashboard && setHeaderHovered(true)}
+          onMouseEnter={() => isDataProject1 && setHeaderHovered(true)}
         />
         <header 
           className="backdrop-blur supports-[backdrop-filter]:bg-slate-900/60 bg-slate-900/80 border-b border-slate-800" 
           style={{ marginTop: 0 }}
-          onMouseEnter={() => isFloodDashboard && setHeaderHovered(true)}
-          onMouseLeave={() => isFloodDashboard && setHeaderHovered(false)}
+          onMouseEnter={() => isDataProject1 && setHeaderHovered(true)}
+          onMouseLeave={() => isDataProject1 && setHeaderHovered(false)}
         >
         <div className="max-w-6xl mx-auto px-4">
           <div className="h-14 flex items-center justify-between">
@@ -198,7 +199,7 @@ export default function App() {
         </header>
       </div>
 
-      <main className={`${isFloodDashboard ? 'w-full' : 'max-w-6xl'} mx-auto ${isFloodDashboard ? 'px-4 py-0' : 'px-4 py-10'}`}>
+      <main className={`${isFloodDashboard ? 'w-full' : 'max-w-6xl'} mx-auto ${isFloodDashboard ? 'px-4 py-0' : 'px-4 pt-20 pb-10'}`}>
         {route === 'home' && <Home setRoute={go} setOpenDataProject={setOpenDataProject} />}
 
         {route === 'about' && <About />}
@@ -325,7 +326,7 @@ function DataProjectViewer({ project, onBack, onOpenDashboard }: { project: Data
 
       <div className={`${containerWidth} max-w-3xl`}>
         <p className="text-slate-300">
-          Project that joins three disparate geospatial datasets on polygon shape, mapping them together to create an entirely new and robust dataset that is servicable across various industries and use cases.  Data extraction and transformation done in Python, visualization of the interactive dashboard completed in React.
+          End-to-end geospatial engineering project that merges three independent spatial datasets using polygon geometry joins to create a novel, production-grade analytical dataset. All spatial ETL and transformations were performed in Python, with large-scale vector data optimized and served via a publicly accessible, cloud-hosted PMTiles pipeline. The final output is delivered through an interactive React-based dashboard designed for high-performance spatial exploration and analysis.
         </p>
       </div>
 
@@ -575,31 +576,87 @@ function TechBadges() {
 function About() {
   return (
     <section className="prose prose-invert max-w-none">
-      <h1><b>About Me</b></h1>
-      <br />
-      <p>
-        I’m Ryan Owens, a Senior BI developer who ships clean, reliable analytics with Power BI and Microsoft Fabric.
-        I focus on practical data models, fast DAX, and a UX that helps non-technical teams act quickly.
-      </p>
+      <div className="flex flex-col md:flex-row gap-6 items-start">
+        <div className="flex-shrink-0">
+          <img
+            src="/Me/Me.jpg"
+            alt="Ryan Owens"
+            className="w-48 h-48 rounded-xl object-cover border border-slate-700"
+          />
+        </div>
 
-      <h3>Core Skill Set</h3>
-      <ul>
-        <li>Power BI & Fabric: data modeling (star schemas, semantic models), DAX/M, RLS, performance tuning</li>
-        <li>Automation & Apps: Power Automate workflows, Power Apps prototypes</li>
-        <li>Data Engineering: SQL/T-SQL, Python pipelines</li>
-        <li>Platforms: SQL Server, Snowflake, Dataverse; Azure</li>
-      </ul>
+        <div className="flex-1">
+          <h1 className="mb-2">
+            <b>About Me</b>
+          </h1>
+          <hr className="my-6 border-slate-700/70" />
 
-      <p className="mt-6">
-        Find me on{' '}
-        <a href="https://github.com/rowens2025" target="_blank" rel="noopener noreferrer" className="underline decoration-slate-600 hover:decoration-slate-300">
-          GitHub (@rowens2025)
-        </a>
-        .
-      </p>
+          <p>
+            I'm Ryan Owens — a data engineer, analytics developer, and applied data scientist focused on building production-ready systems that power analytics, machine learning, and decision automation. I build scalable pipelines, reliable data products, and performant models—from ingestion and transformation through deployment, monitoring, and iteration.
+          </p>
+
+          <p>
+            I’m Microsoft-first (Fabric, Synapse, Power BI, Azure), but I don’t get locked into tools—I ramp quickly and have delivered across modern stacks when needed (including Snowflake and Databricks-style workflows). Most of what I ship sits at the intersection of analytics and ML: trustworthy datasets, production-ready features, and model outputs that plug directly into decision workflows.
+          </p>
+
+          <p>
+            Where I stand out is end-to-end delivery. I can take a project from raw data to a production-grade experience—engineering the backend correctly, then wrapping it in a lightweight React UI so the work is intuitive, consumable, and built to scale beyond the first demo.
+          </p>
+
+          <p>
+            I care deeply about operational excellence: CI/CD for data and analytics artifacts, versioned pipelines, automated testing/validation, and MLOps patterns that make model outputs repeatable, observable, and safe to ship.
+          </p>
+
+          <div className="mt-8 rounded-2xl border border-slate-800/80 bg-slate-900/20 p-6">
+            <h3>Core Skill Set</h3>
+
+            <h4>Data Engineering & Platforms</h4>
+            <ul>
+              <li>Python & SQL pipelines (ETL/ELT), orchestration, incremental loads, and performance tuning</li>
+              <li>Data modeling: star schemas, analytical tables, semantic models, and metric layers</li>
+              <li>Data quality & validation: checks, reconciliation, and operational monitoring</li>
+              <li><strong>Microsoft stack:</strong> Fabric (Lakehouse/Warehouse), Synapse, Power BI, Azure</li>
+            </ul>
+
+            <h4>Machine Learning & Applied Analytics</h4>
+            <ul>
+              <li>Feature engineering and dataset design for modeling and experimentation</li>
+              <li>Model development in Python (and R when appropriate), evaluation, and iteration</li>
+              <li>Building practical ML that connects to business workflows—not just notebooks</li>
+            </ul>
+
+            <h4>MLOps & Production Systems</h4>
+            <ul>
+              <li>Productionizing data/ML workflows: versioned pipelines, reproducible runs, and promotion patterns</li>
+              <li>Monitoring & reliability: logging, metrics, drift/quality signals, and automated alerts</li>
+              <li>Cloud-hosted delivery of data products and model outputs for downstream apps</li>
+            </ul>
+
+            <h4>Automation & Integration</h4>
+            <ul>
+              <li>Workflow automation with Power Automate and API-based integrations</li>
+              <li>Operational tooling to reduce manual work and speed up delivery cycles</li>
+            </ul>
+
+            <p className="mt-6">
+              Find me on{" "}
+              <a
+                href="https://github.com/rowens2025"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline decoration-slate-600 hover:decoration-slate-300"
+              >
+                GitHub (@rowens2025)
+              </a>
+              .
+            </p>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
+
 
 /* ------------------------------------ */
 /* Utilities for Dashboards page        */
