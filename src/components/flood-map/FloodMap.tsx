@@ -114,12 +114,19 @@ export default function FloodMap({
     if (!divRef.current || mapRef.current) return;
 
     const protocol = new Protocol();
-    (maplibregl as any).addProtocol("pmtiles", protocol.tile);
+    
+    try {
+      (maplibregl as any).addProtocol("pmtiles", protocol.tile);
+      console.log("✅ PMTiles protocol registered successfully");
+    } catch (error) {
+      console.error("❌ Failed to register PMTiles protocol:", error);
+    }
 
     console.log("🗺️ Initializing map with PMTiles sources:", {
       buildings: buildingsPmtilesUrl,
       floodzones: floodzonesPmtilesUrl,
       nta: ntaPmtilesUrl,
+      origin: typeof window !== 'undefined' ? window.location.origin : 'N/A',
     });
 
     const style = {
