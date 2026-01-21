@@ -476,10 +476,10 @@ function Home({ setRoute, setOpenDataProject }: { setRoute: (r: Route) => void; 
   return (
     <section className="grid md:grid-cols-2 gap-10 items-center">
       <div>
-        <h1 className="text-4xl md:text-5xl font-semibold leading-tight">Power BI, Fabric & Automation</h1>
+        <h1 className="text-4xl md:text-5xl font-semibold leading-tight">Engineering, Visualization, & Automation</h1>
         <p className="mt-4 text-slate-300">
           I engineer data, build pragmatic analytics with Python, R, SQL, Power BI & Fabric, and automate the last mile with
-          notebooks and Power Automate—turning insights into action.
+          notebooks, scripts and Power Automate flows — turning insights into action.
         </p>
 
         <div className="mt-6 flex flex-wrap gap-3">
