@@ -10,5 +10,5 @@ npm run dev
 - Import repo → Deploy (Vite detected)
 - Build: `npm run build` → Output: `dist`
 
-## Paste your report links
+
 Edit `src/App.tsx` → the `reports` array.
