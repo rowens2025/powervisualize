@@ -76,54 +76,54 @@ export default function KPICards({
 
   if (!kpiData) {
     return (
-      <div className="absolute top-3 left-3 flex flex-col gap-2.5 w-[290px] pointer-events-none z-10">
-        <div className="bg-white/95 rounded-lg p-3 shadow-lg pointer-events-auto">
-          <h4 className="text-xs font-semibold mb-1.5">Loading KPI data...</h4>
+      <div className="absolute top-3 left-3 flex flex-col gap-2 md:gap-2.5 w-[60%] max-w-[180px] md:w-[290px] md:max-w-[290px] pointer-events-none z-10">
+        <div className="bg-white/95 rounded-lg p-2 md:p-3 shadow-lg pointer-events-auto">
+          <h4 className="text-[10px] md:text-xs font-semibold mb-1 md:mb-1.5">Loading KPI data...</h4>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="absolute top-3 left-3 flex flex-col gap-2.5 w-[290px] pointer-events-none z-10">
-      <div className="bg-white/95 rounded-lg p-3 shadow-lg pointer-events-auto">
+    <div className="absolute top-3 left-3 flex flex-col gap-2 md:gap-2.5 w-[60%] max-w-[180px] md:w-[290px] md:max-w-[290px] pointer-events-none z-10">
+      <div className="hidden md:block bg-white/95 rounded-lg p-3 shadow-lg pointer-events-auto">
         <h4 className="text-xs font-semibold mb-1.5 text-gray-700">Scenario</h4>
         <div className="text-base font-bold text-gray-900">{label}</div>
       </div>
 
-      <div className="bg-white/95 rounded-lg p-3 shadow-lg pointer-events-auto">
-        <h4 className="text-xs font-semibold mb-1.5 text-gray-700">Selected Zone</h4>
-        <div className="text-base font-bold text-gray-900">{selectedZone}</div>
+      <div className="bg-white/95 rounded-lg p-2 md:p-3 shadow-lg pointer-events-auto">
+        <h4 className="text-[10px] md:text-xs font-semibold mb-1 md:mb-1.5 text-gray-700">Selected Zone</h4>
+        <div className="text-sm md:text-base font-bold text-gray-900">{selectedZone}</div>
       </div>
 
       {displayStats && typeof displayStats === 'object' && 'total_area' in displayStats ? (
         <>
-          <div className="bg-white/95 rounded-lg p-3 shadow-lg pointer-events-auto">
-            <h4 className="text-xs font-semibold mb-1.5 text-gray-700">
+          <div className="bg-white/95 rounded-lg p-2 md:p-3 shadow-lg pointer-events-auto">
+            <h4 className="text-[10px] md:text-xs font-semibold mb-1 md:mb-1.5 text-gray-700">
               Square Footage Buildings Flooded (FVI ≥ 1)
             </h4>
-            <div className="text-base font-bold text-gray-900">
+            <div className="text-sm md:text-base font-bold text-gray-900">
               {formatArea(displayStats.total_area || 0)}
             </div>
           </div>
 
-          <div className="bg-white/95 rounded-lg p-3 shadow-lg pointer-events-auto">
+          <div className="hidden md:block bg-white/95 rounded-lg p-3 shadow-lg pointer-events-auto">
             <h4 className="text-xs font-semibold mb-1.5 text-gray-700">
               FVI – Sq. Ft. Buildings Flooded
             </h4>
             {renderGrid(displayStats.area_by, " sq ft")}
           </div>
 
-          <div className="bg-white/95 rounded-lg p-3 shadow-lg pointer-events-auto">
-            <h4 className="text-xs font-semibold mb-1.5 text-gray-700">
+          <div className="bg-white/95 rounded-lg p-2 md:p-3 shadow-lg pointer-events-auto">
+            <h4 className="text-[10px] md:text-xs font-semibold mb-1 md:mb-1.5 text-gray-700">
               Count Buildings Flooded (FVI ≥ 1)
             </h4>
-            <div className="text-base font-bold text-gray-900">
+            <div className="text-sm md:text-base font-bold text-gray-900">
               {formatInt(displayStats.total_count || 0)}
             </div>
           </div>
 
-          <div className="bg-white/95 rounded-lg p-3 shadow-lg pointer-events-auto">
+          <div className="hidden md:block bg-white/95 rounded-lg p-3 shadow-lg pointer-events-auto">
             <h4 className="text-xs font-semibold mb-1.5 text-gray-700">
               FVI – Count Buildings Flooded
             </h4>

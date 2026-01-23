@@ -26,18 +26,18 @@ export default function MapControls({
   onToggleLasso,
 }: MapControlsProps) {
   return (
-    <div className="absolute top-3 right-3 rounded-lg p-3 shadow-lg max-w-[380px] z-10 text-xs" style={{ backgroundColor: 'rgba(255, 255, 255, 1)', opacity: 1 }}>
-      <div className="mb-3">
-        <div className="font-bold mb-2 text-gray-900" style={{ letterSpacing: '0.02em' }}>Filters</div>
+    <div className="absolute top-3 right-3 rounded-lg p-2 md:p-3 shadow-lg max-w-[calc(100%-1.5rem)] md:max-w-[380px] z-10 text-[10px] md:text-xs" style={{ backgroundColor: 'rgba(255, 255, 255, 1)', opacity: 1 }}>
+      <div className="mb-2 md:mb-3">
+        <div className="font-bold mb-1.5 md:mb-2 text-gray-900" style={{ letterSpacing: '0.02em' }}>Filters</div>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2 md:space-y-3">
         <div>
-          <div className="font-semibold mb-1.5 text-gray-700" style={{ letterSpacing: '0.01em' }}>Scenario</div>
+          <div className="font-semibold mb-1 md:mb-1.5 text-gray-700" style={{ letterSpacing: '0.01em' }}>Scenario</div>
           <select
             value={scenario}
             onChange={(e) => onScenarioChange(e.target.value)}
-            className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs text-gray-900 bg-white transition-colors hover:border-gray-400"
+            className="w-full px-1.5 md:px-2 py-1 md:py-1.5 border border-gray-300 rounded text-[10px] md:text-xs text-gray-900 bg-white transition-colors hover:border-gray-400"
             style={{ transition: 'border-color 200ms' }}
           >
             {SCENARIOS.map((key) => (
@@ -49,9 +49,9 @@ export default function MapControls({
         </div>
 
         <div>
-          <div className="font-semibold mb-1.5 text-gray-700" style={{ letterSpacing: '0.01em' }}>Layers</div>
-          <div className="flex flex-col gap-1.5">
-            <label className="flex items-center gap-2 cursor-pointer select-none text-gray-800">
+          <div className="font-semibold mb-1 md:mb-1.5 text-gray-700" style={{ letterSpacing: '0.01em' }}>Layers</div>
+          <div className="flex flex-col gap-1 md:gap-1.5">
+            <label className="flex items-center gap-1.5 md:gap-2 cursor-pointer select-none text-gray-800">
               <input
                 type="checkbox"
                 checked={showBuildings}
@@ -61,7 +61,7 @@ export default function MapControls({
               <span>🏢</span>
               <span>Buildings</span>
             </label>
-            <label className="flex items-center gap-2 cursor-pointer select-none text-gray-800">
+            <label className="flex items-center gap-1.5 md:gap-2 cursor-pointer select-none text-gray-800">
               <input
                 type="checkbox"
                 checked={showFloodzones}
@@ -71,7 +71,7 @@ export default function MapControls({
               <span>🌊</span>
               <span>Flood Zones</span>
             </label>
-            <label className="flex items-center gap-2 cursor-pointer select-none text-gray-800">
+            <label className="flex items-center gap-1.5 md:gap-2 cursor-pointer select-none text-gray-800">
               <input
                 type="checkbox"
                 checked={showNTA}
@@ -85,7 +85,7 @@ export default function MapControls({
         </div>
 
         {onToggleLasso && (
-          <div>
+          <div className="hidden md:block">
             <div className="font-semibold mb-1.5 text-gray-700" style={{ letterSpacing: '0.01em' }}>Selection Tools</div>
             <label className="flex items-center gap-2 cursor-pointer select-none text-gray-800">
               <input
@@ -101,15 +101,17 @@ export default function MapControls({
         )}
       </div>
 
-      <div className="h-px bg-gray-200 my-3" />
+      <div className="hidden md:block">
+        <div className="h-px bg-gray-200 my-3" />
 
-      <div className="text-xs text-gray-600 leading-relaxed">
-        <div className="font-medium mb-1.5 text-gray-700">Selection Tips:</div>
-        <div className="space-y-0.5 text-xs">
-          <div>• Click buildings to inspect</div>
-          <div>• Click empty space to deselect</div>
-          <div>• Use lasso for custom selection</div>
-          <div>• Click NTA outlines for neighborhood</div>
+        <div className="text-xs text-gray-600 leading-relaxed">
+          <div className="font-medium mb-1.5 text-gray-700">Selection Tips:</div>
+          <div className="space-y-0.5 text-xs">
+            <div>• Click buildings to inspect</div>
+            <div>• Click empty space to deselect</div>
+            <div>• Use lasso for custom selection</div>
+            <div>• Click NTA outlines for neighborhood</div>
+          </div>
         </div>
       </div>
     </div>

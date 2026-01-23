@@ -54,11 +54,17 @@ export default function FloodMap({
   lassoMode: externalLassoMode = false,
   onLassoModeChange,
 }: FloodMapProps) {
-  const pmtilesBaseUrl = import.meta.env.VITE_PMTILES_BASE_URL || "https://pub-27827c1d284447a28c66f73208ff663e.r2.dev";
-  
-  const defaultBuildingsUrl = buildingsPmtilesUrl || `pmtiles://${pmtilesBaseUrl}/buildings.pmtiles`;
-  const defaultFloodzonesUrl = floodzonesPmtilesUrl || `pmtiles://${pmtilesBaseUrl}/floodzones.pmtiles`;
-  const defaultNtaUrl = ntaPmtilesUrl || `pmtiles://${pmtilesBaseUrl}/nta.pmtiles`;
+  const getPmtilesUrl = (filename: string): string => {
+    if (import.meta.env.DEV) {
+      return `pmtiles:///dataprojects/dp1/${filename}.pmtiles`;
+    } else {
+      return `pmtiles://https://pub-27827c1d284447a28c66f73208ff663e.r2.dev/${filename}.pmtiles`;
+    }
+  };
+
+  const defaultBuildingsUrl = buildingsPmtilesUrl || getPmtilesUrl("buildings");
+  const defaultFloodzonesUrl = floodzonesPmtilesUrl || getPmtilesUrl("floodzones");
+  const defaultNtaUrl = ntaPmtilesUrl || getPmtilesUrl("nta");
   
   const mapRef = useRef<maplibregl.Map | null>(null);
   const divRef = useRef<HTMLDivElement>(null);
@@ -131,7 +137,7 @@ export default function FloodMap({
       buildings: defaultBuildingsUrl,
       floodzones: defaultFloodzonesUrl,
       nta: defaultNtaUrl,
-      baseUrl: pmtilesBaseUrl,
+      environment: import.meta.env.DEV ? 'development' : 'production',
       origin: typeof window !== 'undefined' ? window.location.origin : 'N/A',
     });
 
