@@ -478,8 +478,9 @@ function Home({ setRoute, setOpenDataProject }: { setRoute: (r: Route) => void; 
       <div>
         <h1 className="text-4xl md:text-5xl font-semibold leading-tight">Engineering, Visualization, & Automation</h1>
         <p className="mt-4 text-slate-300">
-          I engineer data, build pragmatic analytics with Python, R, SQL, Power BI & Fabric, and automate the last mile with
-          notebooks, scripts and Power Automate flows — turning insights into action.
+          I engineer and operationalize data into products and use-cases, build pragmatic models and analytics, and automate the last mile with solutions gained from the data — turning insights into action.
+
+          All with Python, R, SQL, React, Synapse, Power BI, Power Automate, Power Shell, and any other stack that I put my mind to.
         </p>
 
         <div className="mt-6 flex flex-wrap gap-3">
