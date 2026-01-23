@@ -320,7 +320,7 @@ function DataProjectViewer({ project, onBack, onOpenDashboard }: { project: Data
         >
           Back
         </button>
-        <h2 className="text-lg font-semibold">{project.title}</h2>
+        <h2 className="text-lg font-semibold ml-6">{project.title}</h2>
         <div />
       </div>
 
@@ -546,18 +546,30 @@ function HeroCard({ setRoute, setOpenDataProject }: { setRoute: (r: Route) => vo
 
 function TechBadges() {
   const items = [
-    'Power BI',
     'Microsoft Fabric',
     'Semantic Models',
     'DAX',
     'M',
     'SQL / T-SQL',
     'Python',
+    'R',
+    'Power Shell',
+    'Dev Ops',
+    'CI/CD',
+    'Data Engineering',
+    'Data Modeling',
+    'ETL / ELT',
+    'Machine Learning',
+    'MLOps',
+    'Power BI',
     'Power Automate',
     'Power Apps',
     'Dataverse',
     'Snowflake',
     'Azure',
+    'Synapse',
+    'Databricks',
+    'React',
   ];
   return (
     <div className="mt-8 flex flex-wrap gap-2">
@@ -772,12 +784,7 @@ function DashboardList({
           <p className="text-slate-400 text-sm">
             Showcasing a variety of compelling and interactive dashboards.
             <br />
-            <br />
-            Reach out in the{' '}
-            <button onClick={() => setRoute('contact')} className="underline decoration-slate-600 hover:decoration-slate-300">
-              Contact
-            </button>{' '}
-            section to discuss analytics + automation work.
+            Ranging from business intelligence reports to displays of new PBI features like Python and Deneb visualizations and capabilities.
           </p>
         </div>
       </div>
