@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Analytics } from '@vercel/analytics/react';
-import { track } from '@vercel/analytics';
 import FloodMap from './components/flood-map/FloodMap';
 import KPICards from './components/flood-map/KPICards';
 import MapControls from './components/flood-map/MapControls';
@@ -103,12 +102,8 @@ export default function App() {
     window.history.pushState({ route: routeKey }, '', path);
   }
 
-  // Track pageviews when route changes
-  useEffect(() => {
-    const path = route === 'home' ? '/' : `/${route}`;
-    // Track with the actual path - this is what Analytics expects
-    track('pageview', { path });
-  }, [route]);
+  // Calculate current path for Analytics component
+  const currentPath = route === 'home' ? '/' : `/${route}`;
 
   // Handle browser back/forward buttons
   useEffect(() => {
@@ -276,7 +271,7 @@ export default function App() {
       <footer className="max-w-6xl mx-auto px-4 pb-10 pt-6 text-xs text-slate-400">
         © {new Date().getFullYear()} Power Visualize LLC • Built with React + Tailwind • Deployed on Vercel
       </footer>
-      <Analytics mode="production" />
+      <Analytics mode="production" path={currentPath} />
     </div>
   );
 }
