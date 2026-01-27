@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Analytics } from '@vercel/analytics/react';
+import { track } from '@vercel/analytics';
 import FloodMap from './components/flood-map/FloodMap';
 import KPICards from './components/flood-map/KPICards';
 import MapControls from './components/flood-map/MapControls';
@@ -97,7 +98,44 @@ export default function App() {
     setOpenReport(null);
     setOpenDataProject(null);
     setMenuOpen(false);
+    // Update URL for better tracking and browser history
+    const path = routeKey === 'home' ? '/' : `/${routeKey}`;
+    window.history.pushState({ route: routeKey }, '', path);
   }
+
+  // Track pageviews when route changes
+  useEffect(() => {
+    track('pageview', { route });
+  }, [route]);
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      const routeFromState = event.state?.route || 'home';
+      setRoute(routeFromState);
+      setOpenReport(null);
+      setOpenDataProject(null);
+      setMenuOpen(false);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Initialize route from URL on mount
+  useEffect(() => {
+    const path = window.location.pathname;
+    const routeFromPath = (path === '/' ? 'home' : path.slice(1).replace(/^\//, '')) as Route;
+    
+    // Validate route and set if valid, otherwise default to home
+    if (navKeys.includes(routeFromPath)) {
+      setRoute(routeFromPath);
+      window.history.replaceState({ route: routeFromPath }, '', path);
+    } else {
+      // Invalid route, redirect to home
+      window.history.replaceState({ route: 'home' }, '', '/');
+    }
+  }, []);
 
   const isFloodDashboard = route === 'data-projects' && openDashboard && openDataProject === 'dp1';
   const isDataProject1 = route === 'data-projects' && openDataProject === 'dp1';
