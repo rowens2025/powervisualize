@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import FloodMap from './components/flood-map/FloodMap';
 import KPICards from './components/flood-map/KPICards';
 import MapControls from './components/flood-map/MapControls';
 import type { ScenarioKPIs } from './components/flood-map/types';
+
 
 type Route = 'home' | 'about' | 'dashboards' | 'data-projects' | 'contact';
 
@@ -234,6 +236,7 @@ export default function App() {
       <footer className="max-w-6xl mx-auto px-4 pb-10 pt-6 text-xs text-slate-400">
         © {new Date().getFullYear()} Power Visualize LLC • Built with React + Tailwind • Deployed on Vercel
       </footer>
+      <Analytics />
     </div>
   );
 }
