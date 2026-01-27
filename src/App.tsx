@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Analytics } from '@vercel/analytics/react';
-import { track } from '@vercel/analytics';
 import FloodMap from './components/flood-map/FloodMap';
 import KPICards from './components/flood-map/KPICards';
 import MapControls from './components/flood-map/MapControls';
@@ -99,14 +98,10 @@ export default function App() {
     setOpenDataProject(null);
     setMenuOpen(false);
     // Update URL for better tracking and browser history
+    // Analytics component will automatically detect URL changes via pushState
     const path = routeKey === 'home' ? '/' : `/${routeKey}`;
     window.history.pushState({ route: routeKey }, '', path);
   }
-
-  // Track pageviews when route changes
-  useEffect(() => {
-    track('pageview', { route });
-  }, [route]);
 
   // Handle browser back/forward buttons
   useEffect(() => {
@@ -274,7 +269,7 @@ export default function App() {
       <footer className="max-w-6xl mx-auto px-4 pb-10 pt-6 text-xs text-slate-400">
         © {new Date().getFullYear()} Power Visualize LLC • Built with React + Tailwind • Deployed on Vercel
       </footer>
-      <Analytics />
+      <Analytics mode="production" />
     </div>
   );
 }
