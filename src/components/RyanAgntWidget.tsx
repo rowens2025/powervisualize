@@ -71,7 +71,11 @@ export default function RyanAgntWidget({ isHomePage = false }: RyanAgntWidgetPro
         <button
           onClick={() => setIsOpen(true)}
           className={`px-6 py-4 rounded-2xl text-slate-900 font-bold text-base shadow-2xl hover:shadow-cyan-500/50 transition-all duration-300 hover:scale-110 active:scale-95 ${
-            !hasAnimated && isHomePage ? 'animate-bounce-subtle animate-gradient-shift' : 'bg-gradient-to-r from-cyan-400 to-fuchsia-500'
+            !hasAnimated && isHomePage 
+              ? 'animate-bounce-subtle animate-gradient-shift' 
+              : hasAnimated && isHomePage
+              ? 'bg-gradient-to-r from-cyan-400 to-fuchsia-500 opacity-50'
+              : 'bg-gradient-to-r from-cyan-400 to-fuchsia-500'
           }`}
           style={
             !hasAnimated && isHomePage
