@@ -1,0 +1,269 @@
+{
+  "version": "1.0",
+  "questions": [
+    {
+      "question": "Does Ryan have dbt experience?",
+      "answer": "Ryan doesn't use dbt specifically, but he applies dbt-style discipline in his data modeling work. He builds canonical layers and follows layered transformation patterns using Azure Synapse and Python, demonstrating the same architectural principles that dbt enforces. His work includes star schema design, semantic modeling, and production-grade data pipelines.",
+      "evidence_links": [
+        {
+          "title": "Data Modeling Experience",
+          "url": "https://www.powervisualize.com"
+        }
+      ],
+      "skills_confirmed": ["Data Modeling", "Azure Synapse"],
+      "confidence": "strong"
+    },
+    {
+      "question": "Does Ryan have Azure Synapse serverless SQL experience?",
+      "answer": "Yes, Ryan has expert-level experience with Azure Synapse Serverless SQL. He has built production pipelines using OPENROWSET, CETAS, and data lake integration patterns. This includes end-to-end data engineering workflows combining serverless SQL with orchestration via Synapse Pipelines.",
+      "evidence_links": [
+        {
+          "title": "Azure Synapse Data Engineering",
+          "url": "https://www.powervisualize.com"
+        }
+      ],
+      "skills_confirmed": ["Azure Synapse", "Serverless SQL"],
+      "confidence": "expert"
+    },
+    {
+      "question": "Does Ryan build production BI platforms with governance?",
+      "answer": "Yes, Ryan is an expert at building production Power BI platforms with governance. He has implemented RLS/OLS automation via PowerShell + XMLA/REST APIs, established CI/CD workflows using PBIP + Azure DevOps, and built multiple production platforms with capacity awareness and embedding capabilities.",
+      "evidence_links": [
+        {
+          "title": "Power BI Dashboards Portfolio",
+          "url": "https://www.powervisualize.com/dashboards"
+        }
+      ],
+      "skills_confirmed": ["Power BI", "DevOps Automation", "PowerShell Automation"],
+      "confidence": "expert"
+    },
+    {
+      "question": "Can Ryan run A/B tests and explain results?",
+      "answer": "Yes, Ryan has strong A/B testing capability. He built a production A/B testing pipeline that produces Power BI-friendly CSV outputs with both frequentist and Bayesian statistical metrics. The pipeline includes GitHub Actions for automation and demonstrates understanding of statistical significance testing.",
+      "evidence_links": [
+        {
+          "title": "AB_Analytics Repository",
+          "url": "https://github.com/rowens2025/AB_Analytics"
+        }
+      ],
+      "skills_confirmed": ["A/B Testing", "Python", "Statistics"],
+      "confidence": "strong"
+    },
+    {
+      "question": "Does Ryan have full-stack capability?",
+      "answer": "Yes, Ryan demonstrates strong full-stack capability. He built and deployed a production React + Vite + Tailwind portfolio site with TypeScript, integrated serverless API functions, and created interactive data visualizations. This shows he can work across the full stack from frontend to backend APIs.",
+      "evidence_links": [
+        {
+          "title": "PowerVisualize Portfolio Site",
+          "url": "https://github.com/rowens2025/powervisualize"
+        },
+        {
+          "title": "Live Portfolio",
+          "url": "https://www.powervisualize.com"
+        }
+      ],
+      "skills_confirmed": ["React", "TypeScript", "Full-Stack Development"],
+      "confidence": "strong"
+    },
+    {
+      "question": "What projects prove Python + experimentation?",
+      "answer": "Ryan's A/B testing pipeline repository demonstrates Python experimentation skills. The project includes frequentist and Bayesian statistical analysis, produces Power BI-friendly outputs, and has automated CI/CD workflows. Additionally, his NYC flood zone geospatial project shows Python for spatial data analysis using GeoPandas and Folium.",
+      "evidence_links": [
+        {
+          "title": "AB_Analytics Repository",
+          "url": "https://github.com/rowens2025/AB_Analytics"
+        },
+        {
+          "title": "NYC Flood Zone Analysis",
+          "url": "https://github.com/rowens2025/nyc-urban-built-floodzone-planimetrics"
+        }
+      ],
+      "skills_confirmed": ["Python", "A/B Testing", "Geospatial Analytics"],
+      "confidence": "expert"
+    },
+    {
+      "question": "What's Ryan's strongest domain: BI, data engineering, or analytics engineering?",
+      "answer": "Ryan's strongest domain is Business Intelligence, where he has expert-level experience building production Power BI platforms with governance, automation, and CI/CD. He also has expert-level data engineering skills with Azure Synapse and ADF pipelines. His analytics engineering capability is strong, demonstrated through A/B testing pipelines and geospatial projects.",
+      "evidence_links": [
+        {
+          "title": "Power BI Dashboards",
+          "url": "https://www.powervisualize.com/dashboards"
+        },
+        {
+          "title": "Data Projects",
+          "url": "https://www.powervisualize.com/data-projects"
+        }
+      ],
+      "skills_confirmed": ["Power BI", "Data Engineering", "Analytics"],
+      "confidence": "expert"
+    },
+    {
+      "question": "Does Ryan have CDC Type 2 experience?",
+      "answer": "Yes, Ryan has implemented CDC Type 2 patterns for historical tracking in data warehouses. This is part of his production data engineering work using Azure Synapse and medallion architecture patterns.",
+      "evidence_links": [
+        {
+          "title": "Data Engineering Experience",
+          "url": "https://www.powervisualize.com"
+        }
+      ],
+      "skills_confirmed": ["Data Engineering", "CDC Type 2"],
+      "confidence": "expert"
+    },
+    {
+      "question": "Can Ryan automate BI governance?",
+      "answer": "Yes, Ryan is an expert at automating BI governance. He has automated RLS/OLS policies via PowerShell + XMLA/REST APIs for scalable Power BI governance. He also established Power BI CI/CD workflows using PBIP + Azure DevOps pipelines.",
+      "evidence_links": [
+        {
+          "title": "Power BI Governance Automation",
+          "url": "https://www.powervisualize.com"
+        }
+      ],
+      "skills_confirmed": ["PowerShell Automation", "Power BI", "DevOps Automation"],
+      "confidence": "expert"
+    },
+    {
+      "question": "Does Ryan have geospatial analytics experience?",
+      "answer": "Yes, Ryan has strong geospatial analytics capability. He built an end-to-end geospatial engineering project merging three independent spatial datasets using polygon geometry joins. The project uses Python (GeoPandas + Folium) and includes a PMTiles pipeline for cloud-hosted vector data with an interactive React dashboard.",
+      "evidence_links": [
+        {
+          "title": "NYC Flood Risk Data Project",
+          "url": "https://www.powervisualize.com/data-projects"
+        },
+        {
+          "title": "NYC Flood Zone Repository",
+          "url": "https://github.com/rowens2025/nyc-urban-built-floodzone-planimetrics"
+        }
+      ],
+      "skills_confirmed": ["Geospatial Analytics", "Python"],
+      "confidence": "strong"
+    },
+    {
+      "question": "What DevOps tools does Ryan use?",
+      "answer": "Ryan uses Azure DevOps for CI/CD pipelines, GitHub Actions for automation, and PowerShell for BI governance automation. He has established Power BI CI/CD workflows using PBIP + Azure DevOps and implemented service hooks for integration.",
+      "evidence_links": [
+        {
+          "title": "DevOps Automation",
+          "url": "https://www.powervisualize.com"
+        },
+        {
+          "title": "AB_Analytics GitHub Actions",
+          "url": "https://github.com/rowens2025/AB_Analytics"
+        }
+      ],
+      "skills_confirmed": ["Azure DevOps", "GitHub Actions", "CI/CD"],
+      "confidence": "expert"
+    },
+    {
+      "question": "Does Ryan have R programming experience?",
+      "answer": "Yes, Ryan has strong R programming skills demonstrated through his lending club loan data analysis repository. The project shows statistical modeling and data science workflows using R.",
+      "evidence_links": [
+        {
+          "title": "Lending Club Loan Data Analysis",
+          "url": "https://github.com/rowens2025/lending-club-loan-data"
+        }
+      ],
+      "skills_confirmed": ["R", "Statistical Modeling"],
+      "confidence": "strong"
+    },
+    {
+      "question": "Can Ryan build semantic models?",
+      "answer": "Yes, Ryan is an expert at building semantic models in Power BI. He has production experience with semantic modeling, governance, and capacity awareness. His work includes building production Power BI platforms with semantic model architecture.",
+      "evidence_links": [
+        {
+          "title": "Power BI Dashboards",
+          "url": "https://www.powervisualize.com/dashboards"
+        }
+      ],
+      "skills_confirmed": ["Power BI", "Semantic Modeling"],
+      "confidence": "expert"
+    },
+    {
+      "question": "Does Ryan have medallion architecture experience?",
+      "answer": "Yes, Ryan has implemented medallion architecture patterns in his data engineering work. This includes building end-to-end pipelines using Azure Synapse and ADF with bronze/silver/gold layer patterns for data transformation.",
+      "evidence_links": [
+        {
+          "title": "Data Engineering Experience",
+          "url": "https://www.powervisualize.com"
+        }
+      ],
+      "skills_confirmed": ["Data Engineering", "Medallion Architecture"],
+      "confidence": "expert"
+    },
+    {
+      "question": "What's Ryan's experience with lakehouse architecture?",
+      "answer": "Ryan has experience with lakehouse architecture through his work with Azure Synapse and data lake integration. He uses OPENROWSET and CETAS patterns for serverless SQL operations on data lakes, demonstrating understanding of modern lakehouse principles.",
+      "evidence_links": [
+        {
+          "title": "Azure Synapse Data Engineering",
+          "url": "https://www.powervisualize.com"
+        }
+      ],
+      "skills_confirmed": ["Azure Synapse", "Lakehouse Architecture"],
+      "confidence": "expert"
+    },
+    {
+      "question": "Does Ryan have machine learning experience?",
+      "answer": "Ryan has strong machine learning capability demonstrated through his statistical modeling work, A/B testing pipelines with Bayesian methods, and data science projects. His R-based lending club analysis shows ML modeling workflows.",
+      "evidence_links": [
+        {
+          "title": "Lending Club Loan Data Analysis",
+          "url": "https://github.com/rowens2025/lending-club-loan-data"
+        },
+        {
+          "title": "AB_Analytics Repository",
+          "url": "https://github.com/rowens2025/AB_Analytics"
+        }
+      ],
+      "skills_confirmed": ["Machine Learning", "Statistics", "R"],
+      "confidence": "strong"
+    },
+    {
+      "question": "Can Ryan work with Power BI embedding?",
+      "answer": "Yes, Ryan has experience with Power BI embedding capabilities as part of building production Power BI platforms. His work includes capacity awareness and embedding features for scalable BI solutions.",
+      "evidence_links": [
+        {
+          "title": "Power BI Platforms",
+          "url": "https://www.powervisualize.com/dashboards"
+        }
+      ],
+      "skills_confirmed": ["Power BI", "Embedding"],
+      "confidence": "expert"
+    },
+    {
+      "question": "Does Ryan use AI tools in development?",
+      "answer": "Yes, Ryan has strong proficiency with AI-assisted development tools including Cursor and ChatGPT. He integrates these tools into his development workflow for productivity and problem-solving.",
+      "evidence_links": [
+        {
+          "title": "AI-Assisted Development",
+          "url": "https://www.powervisualize.com"
+        }
+      ],
+      "skills_confirmed": ["AI Tooling"],
+      "confidence": "strong"
+    },
+    {
+      "question": "What's Ryan's experience with star schema design?",
+      "answer": "Ryan is an expert at star schema design for analytical workloads. He has implemented star schemas as part of his data modeling work, building canonical layers and semantic models for Power BI platforms.",
+      "evidence_links": [
+        {
+          "title": "Data Modeling Experience",
+          "url": "https://www.powervisualize.com"
+        }
+      ],
+      "skills_confirmed": ["Data Modeling", "Star Schema"],
+      "confidence": "expert"
+    },
+    {
+      "question": "Does Ryan have experience with PBIP (Power BI Projects)?",
+      "answer": "Yes, Ryan is an expert with PBIP (Power BI Projects). He has established Power BI CI/CD workflows using PBIP + Azure DevOps pipelines, demonstrating production-grade Power BI development practices.",
+      "evidence_links": [
+        {
+          "title": "Power BI CI/CD",
+          "url": "https://www.powervisualize.com"
+        }
+      ],
+      "skills_confirmed": ["Power BI", "PBIP", "CI/CD"],
+      "confidence": "expert"
+    }
+  ]
+}

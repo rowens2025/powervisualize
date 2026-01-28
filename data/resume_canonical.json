@@ -1,0 +1,141 @@
+{
+  "version": "1.0",
+  "owner": "Ryan Owens",
+  "headline_roles": [
+    "Data Engineer",
+    "Analytics Developer",
+    "Applied Data Scientist"
+  ],
+  "core_skill_groups": {
+    "business_intelligence": [
+      "Power BI",
+      "DAX",
+      "M (Power Query)",
+      "Semantic Modeling",
+      "PBIP (Power BI Projects)",
+      "XMLA",
+      "REST API",
+      "RLS/OLS Automation"
+    ],
+    "data_engineering": [
+      "Azure Synapse",
+      "Serverless SQL",
+      "OPENROWSET",
+      "CETAS",
+      "Azure Data Factory",
+      "Synapse Pipelines",
+      "Medallion Architecture",
+      "CDC Type 2",
+      "Lakehouse Architecture"
+    ],
+    "modeling": [
+      "Star Schema",
+      "Canonical Layer",
+      "Data Modeling",
+      "Semantic Models"
+    ],
+    "programming": [
+      "Python",
+      "R",
+      "SQL",
+      "T-SQL",
+      "TypeScript",
+      "React",
+      "PowerShell"
+    ],
+    "automation_devops": [
+      "Azure DevOps",
+      "CI/CD",
+      "GitHub Actions",
+      "Power BI CI/CD",
+      "Service Hooks",
+      "PowerShell Automation"
+    ],
+    "ai_tooling": [
+      "Cursor",
+      "ChatGPT",
+      "AI-Assisted Development"
+    ],
+    "analytics": [
+      "A/B Testing",
+      "Frequentist Statistics",
+      "Bayesian Statistics",
+      "Geospatial Analytics",
+      "Machine Learning"
+    ]
+  },
+  "experience": [
+    {
+      "company": "Various Clients",
+      "role": "Data Engineer / Analytics Developer",
+      "date_range": "2020 - Present",
+      "impact_statements": [
+        "Built production-grade Power BI platforms with governance, capacity awareness, and embedding capabilities",
+        "Engineered end-to-end data pipelines using Azure Synapse, ADF, and medallion architecture patterns",
+        "Implemented CDC Type 2 patterns for historical tracking in data warehouses",
+        "Automated RLS/OLS policies via PowerShell + XMLA/REST APIs for scalable BI governance",
+        "Established Power BI CI/CD workflows using PBIP + Azure DevOps pipelines",
+        "Developed A/B testing pipelines producing Power BI-friendly outputs with frequentist and Bayesian metrics",
+        "Built geospatial analytics projects merging multiple spatial datasets using Python (GeoPandas + Folium)",
+        "Created production-ready React + Vite + Tailwind portfolio site demonstrating full-stack capability"
+      ],
+      "technologies": [
+        "Power BI",
+        "DAX",
+        "M",
+        "Azure Synapse",
+        "Azure Data Factory",
+        "Python",
+        "SQL",
+        "T-SQL",
+        "PowerShell",
+        "Azure DevOps",
+        "React",
+        "TypeScript",
+        "Vite",
+        "Tailwind CSS"
+      ]
+    }
+  ],
+  "technologies_mentioned": [
+    "Power BI",
+    "DAX",
+    "M (Power Query)",
+    "Semantic Models",
+    "PBIP",
+    "XMLA",
+    "REST API",
+    "Azure Synapse",
+    "Serverless SQL",
+    "OPENROWSET",
+    "CETAS",
+    "Azure Data Factory",
+    "Synapse Pipelines",
+    "Medallion Architecture",
+    "CDC Type 2",
+    "Lakehouse Architecture",
+    "Star Schema",
+    "Canonical Layer",
+    "Python",
+    "R",
+    "SQL",
+    "T-SQL",
+    "TypeScript",
+    "React",
+    "Vite",
+    "Tailwind CSS",
+    "PowerShell",
+    "Azure DevOps",
+    "CI/CD",
+    "GitHub Actions",
+    "A/B Testing",
+    "Frequentist Statistics",
+    "Bayesian Statistics",
+    "Geospatial Analytics",
+    "GeoPandas",
+    "Folium",
+    "Machine Learning",
+    "Cursor",
+    "ChatGPT"
+  ]
+}

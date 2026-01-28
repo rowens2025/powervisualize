@@ -3,6 +3,7 @@ import { Analytics } from '@vercel/analytics/react';
 import FloodMap from './components/flood-map/FloodMap';
 import KPICards from './components/flood-map/KPICards';
 import MapControls from './components/flood-map/MapControls';
+import RyanAgntWidget from './components/RyanAgntWidget';
 import type { ScenarioKPIs } from './components/flood-map/types';
 
 
@@ -122,7 +123,16 @@ export default function App() {
   // Initialize route from URL on mount
   useEffect(() => {
     const path = window.location.pathname;
-    const routeFromPath = (path === '/' ? 'home' : path.slice(1).replace(/^\//, '')) as Route;
+    const pathSegment = path === '/' ? 'home' : path.slice(1).replace(/^\//, '');
+    
+    // Redirect /assistant to home (widget is now global)
+    if (pathSegment === 'assistant') {
+      window.history.replaceState({ route: 'home' }, '', '/');
+      setRoute('home');
+      return;
+    }
+    
+    const routeFromPath = pathSegment as Route;
     
     // Validate route and set if valid, otherwise default to home
     if (navKeys.includes(routeFromPath)) {
@@ -271,6 +281,10 @@ export default function App() {
       <footer className="max-w-6xl mx-auto px-4 pb-10 pt-6 text-xs text-slate-400">
         © {new Date().getFullYear()} Power Visualize LLC • Built with React + Tailwind • Deployed on Vercel
       </footer>
+      
+      {/* Global Ryan Agnt Widget - Only on non-home pages */}
+      {route !== 'home' && <RyanAgntWidget isHomePage={false} />}
+      
       <Analytics mode="production" path={currentPath} />
     </div>
   );
@@ -520,6 +534,11 @@ function Home({ setRoute, setOpenDataProject }: { setRoute: (r: Route) => void; 
 
           All with Python, R, SQL, React, Synapse, Power BI, Power Automate, Power Shell, and any other stack that I put my mind to.
         </p>
+
+        {/* Ryan Agnt Widget - Inline on Home Page */}
+        <div className="mt-6 mb-6">
+          <RyanAgntWidget isHomePage={true} />
+        </div>
 
         <div className="mt-6 flex flex-wrap gap-3">
           <button

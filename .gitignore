@@ -4,6 +4,19 @@ dist
 .vscode
 *.log
 
+# Environment variables
+.env.local
+.env
+.env*.local
+
+# Resume files
+*resume*.pdf
+*resume*.docx
+*resume*.doc
+resume.pdf
+resume.docx
+resume.doc
+
 # Large raw data files (use Git LFS for these)
 *.mbtiles
 *.geojson
@@ -27,3 +40,6 @@ public/dataprojects/**/*.xls
 !public/dataprojects/dp1/kpi_data.json
 !public/dataprojects/dp1/slides/
 !public/previews/
+
+.vercel
+.env*.local

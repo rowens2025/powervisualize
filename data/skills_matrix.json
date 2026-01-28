@@ -1,0 +1,322 @@
+{
+  "version": "1.0",
+  "owner": "Ryan Owens",
+  "rules": {
+    "confidence_levels": ["expert", "strong"],
+    "no_hallucinations": true,
+    "require_proof": true
+  },
+  "skills": [
+    {
+      "skill": "Power BI",
+      "aliases": ["DAX", "M", "semantic model", "PBIP", "XMLA", "Power Query"],
+      "confidence": "expert",
+      "summary": "Production-grade Power BI development with DAX, M, semantic modeling, governance, capacity awareness, and embedding capabilities.",
+      "proof": [
+        {
+          "type": "work",
+          "title": "Production Power BI Platforms",
+          "url": "https://www.powervisualize.com/dashboards",
+          "proof_points": [
+            "Built multiple production Power BI platforms with governance",
+            "Implemented RLS/OLS automation via XMLA/REST",
+            "Established CI/CD workflows using PBIP + Azure DevOps"
+          ],
+          "stack": ["Power BI", "DAX", "M", "PBIP", "XMLA", "Azure DevOps"],
+          "tags": ["governance", "automation", "ci-cd"]
+        },
+        {
+          "type": "dashboard",
+          "title": "Power BI Dashboards Portfolio",
+          "url": "https://www.powervisualize.com/dashboards",
+          "proof_points": [
+            "Multiple interactive dashboards showcasing DAX and M capabilities",
+            "Python and Deneb visualizations",
+            "Production-ready report designs"
+          ],
+          "stack": ["Power BI", "DAX", "M", "Python"],
+          "tags": ["visualization", "dashboards"]
+        }
+      ]
+    },
+    {
+      "skill": "Data Modeling",
+      "aliases": ["star schema", "canonical layer", "semantic model", "dimensional modeling"],
+      "confidence": "expert",
+      "summary": "Expert in star schema design, canonical layer architecture, and semantic modeling for analytical systems.",
+      "proof": [
+        {
+          "type": "work",
+          "title": "Data Warehouse Architecture",
+          "url": "https://www.powervisualize.com",
+          "proof_points": [
+            "Implemented medallion architecture patterns",
+            "Designed star schemas for analytical workloads",
+            "Built canonical layer for consistent data access"
+          ],
+          "stack": ["SQL", "Azure Synapse", "Data Modeling"],
+          "tags": ["architecture", "warehouse"]
+        }
+      ]
+    },
+    {
+      "skill": "Azure Synapse",
+      "aliases": ["Synapse", "Serverless SQL", "OPENROWSET", "CETAS"],
+      "confidence": "expert",
+      "summary": "Production experience with Azure Synapse Serverless SQL, OPENROWSET, CETAS, and data lake integration.",
+      "proof": [
+        {
+          "type": "work",
+          "title": "Synapse Data Engineering",
+          "url": "https://www.powervisualize.com",
+          "proof_points": [
+            "Built end-to-end pipelines using Azure Synapse",
+            "Implemented serverless SQL patterns",
+            "Used OPENROWSET and CETAS for data lake operations"
+          ],
+          "stack": ["Azure Synapse", "Serverless SQL", "T-SQL"],
+          "tags": ["data-engineering", "azure"]
+        }
+      ]
+    },
+    {
+      "skill": "Azure Data Factory",
+      "aliases": ["ADF", "Synapse Pipelines", "orchestration"],
+      "confidence": "expert",
+      "summary": "Expert in Azure Data Factory and Synapse Pipelines for ETL orchestration and data movement.",
+      "proof": [
+        {
+          "type": "work",
+          "title": "Data Pipeline Orchestration",
+          "url": "https://www.powervisualize.com",
+          "proof_points": [
+            "Engineered end-to-end data pipelines using ADF",
+            "Implemented Synapse Pipelines for data transformation",
+            "Built medallion architecture workflows"
+          ],
+          "stack": ["Azure Data Factory", "Synapse Pipelines", "Python"],
+          "tags": ["orchestration", "etl"]
+        }
+      ]
+    },
+    {
+      "skill": "Python",
+      "aliases": ["Python", "ETL", "notebooks", "experimentation"],
+      "confidence": "expert",
+      "summary": "Expert Python developer for ETL, data analysis, A/B testing pipelines, and geospatial analytics.",
+      "proof": [
+        {
+          "type": "repo",
+          "title": "A/B Testing Pipeline",
+          "url": "https://github.com/rowens2025/AB_Analytics",
+          "proof_points": [
+            "Production A/B testing pipeline producing Power BI-friendly CSV outputs",
+            "Includes frequentist and Bayesian metrics",
+            "GitHub Action workflow for automation"
+          ],
+          "stack": ["Python", "A/B Testing", "Statistics"],
+          "tags": ["testing", "analytics"]
+        },
+        {
+          "type": "repo",
+          "title": "NYC Flood Zone Geospatial Project",
+          "url": "https://github.com/rowens2025/nyc-urban-built-floodzone-planimetrics",
+          "proof_points": [
+            "Geospatial analytics merging multiple spatial datasets",
+            "Python (GeoPandas + Folium) for spatial analysis",
+            "Production-grade analytical dataset creation"
+          ],
+          "stack": ["Python", "GeoPandas", "Folium", "Geospatial"],
+          "tags": ["geospatial", "analytics"]
+        },
+        {
+          "type": "project_page",
+          "title": "NYC Flood Risk Data Project",
+          "url": "https://www.powervisualize.com/data-projects",
+          "proof_points": [
+            "End-to-end geospatial engineering project",
+            "Spatial ETL and transformations in Python",
+            "PMTiles pipeline for cloud-hosted vector data"
+          ],
+          "stack": ["Python", "GeoPandas", "PMTiles"],
+          "tags": ["geospatial", "data-engineering"]
+        }
+      ]
+    },
+    {
+      "skill": "A/B Testing",
+      "aliases": ["A/B testing", "experimentation", "frequentist", "bayesian"],
+      "confidence": "strong",
+      "summary": "Strong capability in A/B testing with both frequentist and Bayesian statistical approaches.",
+      "proof": [
+        {
+          "type": "repo",
+          "title": "AB_Analytics Repository",
+          "url": "https://github.com/rowens2025/AB_Analytics",
+          "proof_points": [
+            "A/B testing pipeline with frequentist metrics",
+            "Bayesian statistical analysis",
+            "Power BI-friendly CSV outputs"
+          ],
+          "stack": ["Python", "Statistics", "A/B Testing"],
+          "tags": ["testing", "statistics"]
+        }
+      ]
+    },
+    {
+      "skill": "DevOps Automation",
+      "aliases": ["Azure DevOps", "CI/CD", "GitHub Actions", "pipelines"],
+      "confidence": "expert",
+      "summary": "Expert in CI/CD automation using Azure DevOps pipelines, GitHub Actions, and Power BI CI/CD workflows.",
+      "proof": [
+        {
+          "type": "work",
+          "title": "Power BI CI/CD Implementation",
+          "url": "https://www.powervisualize.com",
+          "proof_points": [
+            "Established Power BI CI/CD workflows using PBIP + Azure DevOps",
+            "Automated deployment pipelines",
+            "Service hooks integration"
+          ],
+          "stack": ["Azure DevOps", "PBIP", "CI/CD"],
+          "tags": ["automation", "devops"]
+        },
+        {
+          "type": "repo",
+          "title": "AB_Analytics GitHub Actions",
+          "url": "https://github.com/rowens2025/AB_Analytics",
+          "proof_points": [
+            "GitHub Action workflow for automation",
+            "CI/CD pipeline implementation"
+          ],
+          "stack": ["GitHub Actions", "CI/CD"],
+          "tags": ["automation", "github"]
+        }
+      ]
+    },
+    {
+      "skill": "PowerShell Automation",
+      "aliases": ["PowerShell", "RLS", "OLS", "XMLA", "REST"],
+      "confidence": "expert",
+      "summary": "Expert in PowerShell automation for BI governance, particularly RLS/OLS policy management via XMLA and REST APIs.",
+      "proof": [
+        {
+          "type": "work",
+          "title": "RLS/OLS Automation",
+          "url": "https://www.powervisualize.com",
+          "proof_points": [
+            "Automated RLS/OLS policies via PowerShell + XMLA/REST",
+            "Scalable BI governance automation",
+            "Production implementation"
+          ],
+          "stack": ["PowerShell", "XMLA", "REST API", "Power BI"],
+          "tags": ["automation", "governance"]
+        }
+      ]
+    },
+    {
+      "skill": "React",
+      "aliases": ["React", "Vite", "Tailwind", "TypeScript"],
+      "confidence": "strong",
+      "summary": "Strong full-stack capability demonstrated through production React + Vite + Tailwind portfolio site.",
+      "proof": [
+        {
+          "type": "repo",
+          "title": "PowerVisualize Portfolio Site",
+          "url": "https://github.com/rowens2025/powervisualize",
+          "proof_points": [
+            "Production React + Vite + Tailwind portfolio site",
+            "TypeScript implementation",
+            "Deployed on Vercel with serverless functions"
+          ],
+          "stack": ["React", "Vite", "Tailwind CSS", "TypeScript", "Vercel"],
+          "tags": ["frontend", "full-stack"]
+        },
+        {
+          "type": "project_page",
+          "title": "Portfolio Website",
+          "url": "https://www.powervisualize.com",
+          "proof_points": [
+            "Full-stack React application",
+            "Interactive data visualizations",
+            "Serverless API integration"
+          ],
+          "stack": ["React", "Vite", "Tailwind CSS"],
+          "tags": ["portfolio", "frontend"]
+        }
+      ]
+    },
+    {
+      "skill": "R",
+      "aliases": ["R", "R programming"],
+      "confidence": "strong",
+      "summary": "Strong R programming skills demonstrated through lending club loan data analysis project.",
+      "proof": [
+        {
+          "type": "repo",
+          "title": "Lending Club Loan Data Analysis",
+          "url": "https://github.com/rowens2025/lending-club-loan-data",
+          "proof_points": [
+            "R-based repository for loan data analysis",
+            "Statistical modeling and analysis",
+            "Data science workflow"
+          ],
+          "stack": ["R", "Statistics", "Data Science"],
+          "tags": ["statistics", "modeling"]
+        }
+      ]
+    },
+    {
+      "skill": "Geospatial Analytics",
+      "aliases": ["geospatial", "GeoPandas", "Folium", "spatial analysis"],
+      "confidence": "strong",
+      "summary": "Strong geospatial analytics capability demonstrated through NYC flood zone analysis project.",
+      "proof": [
+        {
+          "type": "repo",
+          "title": "NYC Flood Zone Analysis",
+          "url": "https://github.com/rowens2025/nyc-urban-built-floodzone-planimetrics",
+          "proof_points": [
+            "Geospatial notebook project analyzing flood zones and building footprints",
+            "Spatial data merging and analysis",
+            "Python-based geospatial workflows"
+          ],
+          "stack": ["Python", "GeoPandas", "Folium"],
+          "tags": ["geospatial", "analytics"]
+        },
+        {
+          "type": "project_page",
+          "title": "NYC Flood Risk Data Project",
+          "url": "https://www.powervisualize.com/data-projects",
+          "proof_points": [
+            "Interactive flood vulnerability mapping",
+            "Enriched geospatial dataset visualization",
+            "PMTiles pipeline for cloud-hosted data"
+          ],
+          "stack": ["Python", "GeoPandas", "React", "PMTiles"],
+          "tags": ["geospatial", "visualization"]
+        }
+      ]
+    },
+    {
+      "skill": "AI Tooling",
+      "aliases": ["Cursor", "ChatGPT", "AI-assisted development"],
+      "confidence": "strong",
+      "summary": "Strong proficiency with AI-assisted development tools including Cursor and ChatGPT for productivity.",
+      "proof": [
+        {
+          "type": "work",
+          "title": "AI-Assisted Development",
+          "url": "https://www.powervisualize.com",
+          "proof_points": [
+            "Using Cursor and ChatGPT for development workflows",
+            "AI-assisted code generation and problem-solving",
+            "Integration into development process"
+          ],
+          "stack": ["Cursor", "ChatGPT", "AI Tools"],
+          "tags": ["productivity", "ai"]
+        }
+      ]
+    }
+  ]
+}

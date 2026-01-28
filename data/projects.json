@@ -1,0 +1,66 @@
+{
+  "version": "1.0",
+  "projects": [
+    {
+      "id": "powervisualize",
+      "title": "PowerVisualize Portfolio Site",
+      "type": "full-stack",
+      "description": "Production React + Vite + Tailwind portfolio site demonstrating full-stack capability with interactive data visualizations and serverless API integration.",
+      "repo_url": "https://github.com/rowens2025/powervisualize",
+      "live_url": "https://www.powervisualize.com",
+      "stack": ["React", "Vite", "Tailwind CSS", "TypeScript", "Vercel", "Serverless Functions"],
+      "skills_demonstrated": ["React", "TypeScript", "Full-Stack Development"],
+      "proof_points": [
+        "Production deployment on Vercel",
+        "Serverless API functions",
+        "Interactive data visualizations",
+        "Responsive design with Tailwind"
+      ]
+    },
+    {
+      "id": "ab-analytics",
+      "title": "A/B Testing Pipeline",
+      "type": "data-pipeline",
+      "description": "Production A/B testing pipeline producing Power BI-friendly CSV outputs with frequentist and Bayesian metrics, including GitHub Action workflow.",
+      "repo_url": "https://github.com/rowens2025/AB_Analytics",
+      "stack": ["Python", "A/B Testing", "Statistics", "GitHub Actions"],
+      "skills_demonstrated": ["Python", "A/B Testing", "Statistics", "CI/CD"],
+      "proof_points": [
+        "Frequentist statistical analysis",
+        "Bayesian metrics implementation",
+        "Power BI integration",
+        "Automated CI/CD workflow"
+      ]
+    },
+    {
+      "id": "nyc-flood",
+      "title": "NYC Flood Risk: Buildings vs Neighborhoods",
+      "type": "geospatial",
+      "description": "End-to-end geospatial engineering project merging three independent spatial datasets using polygon geometry joins. Spatial ETL performed in Python with PMTiles pipeline for cloud-hosted vector data.",
+      "repo_url": "https://github.com/rowens2025/nyc-urban-built-floodzone-planimetrics",
+      "live_url": "https://www.powervisualize.com/data-projects",
+      "stack": ["Python", "GeoPandas", "Folium", "PMTiles", "React"],
+      "skills_demonstrated": ["Python", "Geospatial Analytics", "Data Engineering"],
+      "proof_points": [
+        "Spatial dataset merging",
+        "Polygon geometry joins",
+        "PMTiles optimization",
+        "Interactive React dashboard"
+      ]
+    },
+    {
+      "id": "lending-club",
+      "title": "Lending Club Loan Data Analysis",
+      "type": "data-science",
+      "description": "R-based repository for loan data analysis with statistical modeling and data science workflows.",
+      "repo_url": "https://github.com/rowens2025/lending-club-loan-data",
+      "stack": ["R", "Statistics", "Data Science"],
+      "skills_demonstrated": ["R", "Statistical Modeling"],
+      "proof_points": [
+        "R programming proficiency",
+        "Statistical analysis",
+        "Data science workflow"
+      ]
+    }
+  ]
+}
