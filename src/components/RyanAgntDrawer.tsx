@@ -48,7 +48,10 @@ export default function RyanAgntDrawer({ isOpen, onClose }: RyanAgntDrawerProps)
 
   useEffect(() => {
     if (isOpen) {
-      scrollToBottom();
+      // Only scroll to bottom when new messages are added, not on initial open
+      if (messages.length > 0) {
+        scrollToBottom();
+      }
       inputRef.current?.focus();
     }
   }, [messages, isOpen]);
@@ -251,7 +254,7 @@ export default function RyanAgntDrawer({ isOpen, onClose }: RyanAgntDrawerProps)
 
       {/* Drawer */}
       <div
-        className={`fixed top-0 right-0 h-full w-full sm:w-[420px] bg-slate-900 border-l border-slate-800 z-50 transform transition-transform duration-300 ease-out shadow-2xl ${
+        className={`fixed top-[15%] left-[10%] sm:top-0 sm:right-0 sm:left-auto h-[85%] sm:h-full w-[90%] sm:w-[420px] bg-slate-900 border-l border-slate-800 z-50 transform transition-transform duration-300 ease-out shadow-2xl rounded-t-2xl sm:rounded-none ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >

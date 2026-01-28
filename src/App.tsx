@@ -24,6 +24,14 @@ type DataProject = {
   maps?: { key: 'buildings' | 'nta'; label: string; src: string }[];
 };
 
+// Helper function to convert title to URL slug
+function titleToSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 export default function App() {
   const [route, setRoute] = useState<Route>('home');
   const [openReport, setOpenReport] = useState<string | null>(null);
@@ -97,23 +105,124 @@ export default function App() {
     setRoute(routeKey);
     setOpenReport(null);
     setOpenDataProject(null);
+    setOpenDashboard(false);
     setMenuOpen(false);
     // Update URL for better tracking and browser history
     const path = routeKey === 'home' ? '/' : `/${routeKey}`;
     window.history.pushState({ route: routeKey }, '', path);
   }
 
+  // Function to open a data project with URL update
+  const openDataProjectWithUrl = (projectId: string) => {
+    const project = dataProjects.find(p => p.id === projectId);
+    if (project) {
+      setOpenDataProject(projectId);
+      setRoute('data-projects');
+      const slug = titleToSlug(project.title);
+      const path = `/data-projects/${slug}`;
+      window.history.pushState({ route: 'data-projects', projectId }, '', path);
+    }
+  };
+
+  // Function to open a dashboard with URL update
+  const openDashboardWithUrl = (reportId: string) => {
+    const report = reports.find(r => r.id === reportId);
+    if (report) {
+      setOpenReport(reportId);
+      setRoute('dashboards');
+      const slug = titleToSlug(report.title);
+      const path = `/dashboards/${slug}`;
+      window.history.pushState({ route: 'dashboards', reportId }, '', path);
+    }
+  };
+
+  // Function to open flood dashboard with URL update
+  const openFloodDashboardWithUrl = () => {
+    setOpenDashboard(true);
+    const project = dataProjects.find(p => p.id === 'dp1');
+    if (project) {
+      const slug = titleToSlug(project.title);
+      const path = `/data-projects/${slug}/dashboard`;
+      window.history.pushState({ route: 'data-projects', projectId: 'dp1', dashboard: true }, '', path);
+    }
+  };
+
   // Calculate current path for Analytics component
   const currentPath = route === 'home' ? '/' : `/${route}`;
+
+  // Function to parse URL and set appropriate state
+  const parseUrlAndSetState = (path: string) => {
+    // Redirect /assistant to home (widget is now global)
+    if (path === '/assistant') {
+      window.history.replaceState({ route: 'home' }, '', '/');
+      setRoute('home');
+      setOpenReport(null);
+      setOpenDataProject(null);
+      setOpenDashboard(false);
+      return;
+    }
+
+    // Handle data projects with slugs
+    if (path.startsWith('/data-projects/')) {
+      const slug = path.replace('/data-projects/', '').split('/')[0];
+      // Check if it's a dashboard view
+      if (path.includes('/dashboard')) {
+        const project = dataProjects.find(p => titleToSlug(p.title) === slug);
+        if (project) {
+          setRoute('data-projects');
+          setOpenDataProject(project.id);
+          setOpenDashboard(true);
+          return;
+        }
+      } else {
+        // Regular project view
+        const project = dataProjects.find(p => titleToSlug(p.title) === slug);
+        if (project) {
+          setRoute('data-projects');
+          setOpenDataProject(project.id);
+          setOpenDashboard(false);
+          return;
+        }
+      }
+    }
+
+    // Handle dashboards with slugs
+    if (path.startsWith('/dashboards/')) {
+      const slug = path.replace('/dashboards/', '');
+      const report = reports.find(r => titleToSlug(r.title) === slug);
+      if (report) {
+        setRoute('dashboards');
+        setOpenReport(report.id);
+        setOpenDataProject(null);
+        setOpenDashboard(false);
+        return;
+      }
+    }
+
+    // Handle base routes
+    const pathSegment = path === '/' ? 'home' : path.slice(1).split('/')[0];
+    const routeFromPath = pathSegment as Route;
+    
+    if (navKeys.includes(routeFromPath)) {
+      setRoute(routeFromPath);
+      setOpenReport(null);
+      setOpenDataProject(null);
+      setOpenDashboard(false);
+    } else {
+      // Invalid route, redirect to home
+      window.history.replaceState({ route: 'home' }, '', '/');
+      setRoute('home');
+      setOpenReport(null);
+      setOpenDataProject(null);
+      setOpenDashboard(false);
+    }
+  };
 
   // Handle browser back/forward buttons
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
-      const routeFromState = event.state?.route || 'home';
-      setRoute(routeFromState);
-      setOpenReport(null);
-      setOpenDataProject(null);
-      setMenuOpen(false);
+      const path = window.location.pathname;
+      parseUrlAndSetState(path);
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -122,26 +231,7 @@ export default function App() {
 
   // Initialize route from URL on mount
   useEffect(() => {
-    const path = window.location.pathname;
-    const pathSegment = path === '/' ? 'home' : path.slice(1).replace(/^\//, '');
-    
-    // Redirect /assistant to home (widget is now global)
-    if (pathSegment === 'assistant') {
-      window.history.replaceState({ route: 'home' }, '', '/');
-      setRoute('home');
-      return;
-    }
-    
-    const routeFromPath = pathSegment as Route;
-    
-    // Validate route and set if valid, otherwise default to home
-    if (navKeys.includes(routeFromPath)) {
-      setRoute(routeFromPath);
-      window.history.replaceState({ route: routeFromPath }, '', path);
-    } else {
-      // Invalid route, redirect to home
-      window.history.replaceState({ route: 'home' }, '', '/');
-    }
+    parseUrlAndSetState(window.location.pathname);
   }, []);
 
   const isFloodDashboard = route === 'data-projects' && openDashboard && openDataProject === 'dp1';
@@ -247,32 +337,48 @@ export default function App() {
       </div>
 
       <main className={`${isFloodDashboard ? 'w-full' : 'max-w-6xl'} mx-auto ${isFloodDashboard ? 'px-4 py-0' : 'px-4 pt-20 pb-10'}`}>
-        {route === 'home' && <Home setRoute={go} setOpenDataProject={setOpenDataProject} />}
+        {route === 'home' && <Home setRoute={go} setOpenDataProject={openDataProjectWithUrl} />}
 
         {route === 'about' && <About />}
 
         {route === 'dashboards' &&
           (openReport ? (
-            <ReportViewer report={reports.find((r) => r.id === openReport)!} onBack={() => setOpenReport(null)} />
+            <ReportViewer 
+              report={reports.find((r) => r.id === openReport)!} 
+              onBack={() => {
+                setOpenReport(null);
+                window.history.pushState({ route: 'dashboards' }, '', '/dashboards');
+              }} 
+            />
           ) : (
-            <DashboardList reports={reports} onOpen={setOpenReport} setRoute={go} />
+            <DashboardList reports={reports} onOpen={openDashboardWithUrl} setRoute={go} />
           ))}
 
         {route === 'data-projects' &&
           (openDataProject ? (
             openDashboard && openDataProject === 'dp1' ? (
               <FloodDashboardViewer
-                onBack={() => setOpenDashboard(false)}
+                onBack={() => {
+                  setOpenDashboard(false);
+                  const project = dataProjects.find(p => p.id === openDataProject);
+                  if (project) {
+                    const slug = titleToSlug(project.title);
+                    window.history.pushState({ route: 'data-projects', projectId: openDataProject }, '', `/data-projects/${slug}`);
+                  }
+                }}
               />
             ) : (
               <DataProjectViewer
                 project={dataProjects.find((p) => p.id === openDataProject)!}
-                onBack={() => setOpenDataProject(null)}
-                onOpenDashboard={() => setOpenDashboard(true)}
+                onBack={() => {
+                  setOpenDataProject(null);
+                  window.history.pushState({ route: 'data-projects' }, '', '/data-projects');
+                }}
+                onOpenDashboard={openFloodDashboardWithUrl}
               />
             )
           ) : (
-            <DataProjectList projects={dataProjects} onOpen={setOpenDataProject} />
+            <DataProjectList projects={dataProjects} onOpen={openDataProjectWithUrl} />
           ))}
 
         {route === 'contact' && <Contact />}
@@ -579,7 +685,6 @@ function HeroCard({ setRoute, setOpenDataProject }: { setRoute: (r: Route) => vo
 
         <button
           onClick={() => {
-            setRoute('data-projects');
             setOpenDataProject('dp1');
           }}
           className="mt-6 w-full aspect-video rounded-2xl ring-1 ring-slate-700 overflow-hidden bg-[#0b0f17] group cursor-pointer relative"

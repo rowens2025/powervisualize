@@ -57,11 +57,11 @@ export default function RyanAgntWidget({ isHomePage = false }: RyanAgntWidgetPro
         {/* Thought Bubble */}
         {showThoughtBubble && isHomePage && (
           <div className="absolute -top-20 left-1/2 -translate-x-1/2 animate-fade-in z-[101]">
-            <div className="relative bg-white text-slate-900 px-5 py-3 rounded-2xl shadow-2xl text-sm font-semibold whitespace-nowrap border-2 border-cyan-400/30">
+            <div className="relative bg-white text-slate-900 px-4 py-3 rounded-2xl shadow-2xl text-xs sm:text-sm font-semibold border-2 border-cyan-400/30 max-w-[200px] sm:max-w-none sm:whitespace-nowrap">
               <span>💭 Ask me anything about Ryan's skills!</span>
-              {/* Bubble tail */}
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full">
-                <div className="w-0 h-0 border-l-[12px] border-r-[12px] border-t-[12px] border-transparent border-t-white"></div>
+              {/* Bubble tail pointing down to button */}
+              <div className="absolute top-full left-1/2 -translate-x-1/2">
+                <div className="w-0 h-0 border-l-[12px] border-r-[12px] border-b-[12px] border-transparent border-b-white"></div>
               </div>
             </div>
           </div>
@@ -89,8 +89,8 @@ export default function RyanAgntWidget({ isHomePage = false }: RyanAgntWidgetPro
           aria-label="Open RyAgent"
         >
           <div className="flex items-center gap-2">
-            <span>💬</span>
             <span>RyAgent</span>
+            <span>💬</span>
           </div>
         </button>
       </div>
