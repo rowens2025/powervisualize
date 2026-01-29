@@ -1,0 +1,137 @@
+version: 2
+
+models:
+  - name: dim_projects
+    description: "Dimension table of portfolio projects (source of truth for project metadata)."
+    columns:
+      - name: project_id
+        description: "Primary key for project."
+        tests: [not_null, unique]
+      - name: slug
+        description: "URL-safe identifier used for routing and joins."
+        tests: [not_null, unique]
+      - name: status
+        description: "Publishing status of the project."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['published', 'draft']
+
+  - name: dim_pages
+    description: "Dimension table of site pages (project pages, dashboards, writeups, about)."
+    columns:
+      - name: page_id
+        description: "Primary key for page."
+        tests: [not_null, unique]
+      - name: slug
+        description: "URL-safe identifier used for routing and joins."
+        tests: [not_null, unique]
+      - name: page_type
+        description: "Type of page in the site."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['home', 'about', 'project', 'dashboard', 'writeup', 'assistant']
+
+  - name: fct_project_pages
+    description: "Bridge table (factless fact) connecting projects to pages with relationship metadata."
+    columns:
+      - name: project_id
+        description: "FK to dim_projects."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_projects')
+              field: project_id
+      - name: page_id
+        description: "FK to dim_pages."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_pages')
+              field: page_id
+      - name: relationship
+        description: "How the page relates to the project (primary/supporting)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['primary', 'supporting']
+
+  - name: fct_project_skills
+    description: "Bridge table (factless fact) connecting projects to skills with strength and weighting."
+    tests:
+      - unique:
+          column_name: "project_id || '-' || skill_id"
+    columns:
+      - name: project_id
+        description: "FK to dim_projects."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_projects')
+              field: project_id
+      - name: skill_id
+        description: "FK to stg_skills."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_skills')
+              field: skill_id
+      - name: strength
+        description: "Primary vs secondary skill association for the project."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['primary', 'secondary']
+      - name: proof_weight
+        description: "1–5 weight for how strongly this project demonstrates the skill."
+        tests:
+          - not_null
+      - name: skill_name
+        description: "Denormalized skill name for convenience in agent queries."
+        tests: [not_null]
+      - name: skill_confidence
+        description: "Confidence level for the skill (expert or strong)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['expert', 'strong']
+        
+
+  - name: fct_project_counts
+    description: "Aggregated metrics per project for agent narration and coverage reporting."
+    columns:
+      - name: project_id
+        description: "Project primary key."
+        tests: [not_null, unique]
+      - name: slug
+        description: "Project slug."
+        tests: [not_null, unique]
+      - name: skills_count
+        description: "Count of skills linked to the project."
+        tests: [not_null]
+      - name: dashboard_pages
+        description: "Count of dashboard-type pages linked to the project."
+        tests: [not_null]
+      - name: project_pages
+        description: "Count of project-type pages linked to the project."
+        tests: [not_null]
+      - name: writeup_pages
+        description: "Count of writeup-type pages linked to the project."
+        tests: [not_null]
+
+  - name: mart_project_profile
+    description: "One-row-per-project profile for RyAgent: project metadata plus JSON arrays of pages and skills."
+    columns:
+      - name: project_id
+        description: "Project primary key."
+        tests: [not_null, unique]
+      - name: slug
+        description: "Project slug."
+        tests: [not_null, unique]
+      - name: status
+        description: "Publishing status."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['published', 'draft']

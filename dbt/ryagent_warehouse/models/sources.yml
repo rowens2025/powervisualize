@@ -1,0 +1,18 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: public
+    tables:
+      - name: team_members
+      - name: projects
+      - name: team_member_projects
+      - name: pages
+      - name: project_pages
+      - name: skills
+      - name: project_skills
+      - name: personality
+      - name: team_member_personality
+      - name: objects
+      - name: team_member_objects
+      - name: project_objects

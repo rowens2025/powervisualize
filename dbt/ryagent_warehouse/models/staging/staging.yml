@@ -1,0 +1,34 @@
+version: 2
+
+models:
+  - name: stg_projects
+    description: Cleaned projects table from Neon
+    columns:
+      - name: project_id
+        tests: [not_null, unique]
+      - name: slug
+        tests: [not_null, unique]
+
+  - name: stg_pages
+    description: Cleaned pages table from Neon
+    columns:
+      - name: page_id
+        tests: [not_null, unique]
+      - name: slug
+        tests: [not_null, unique]
+
+  - name: stg_project_pages
+    description: Join table connecting projects to pages
+    columns:
+      - name: project_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_projects')
+              field: project_id
+      - name: page_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_pages')
+              field: page_id
