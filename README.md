@@ -1,6 +1,6 @@
-# PowerVisualize – React + Vite + Tailwind Portfolio
+# PowerVisualize
 
-Portfolio site with evidence-grounded Portfolio Assistant for employer Q&A.
+Portfolio site with evidence-grounded AI assistant powered by dbt-style analytics engineering.
 
 ## Quickstart
 
@@ -24,9 +24,10 @@ Create `.env.local` (already in `.gitignore`):
 
 ```
 OPENAI_API_KEY=sk-your-key-here
+DATABASE_URL=postgresql://user:password@host.neon.tech/dbname?sslmode=require
 ```
 
-Add the same key in Vercel Dashboard → Settings → Environment Variables for production.
+Add both keys in Vercel Dashboard → Settings → Environment Variables for production.
 
 ## Deploy to Vercel
 
@@ -79,85 +80,37 @@ Portfolio Assistant endpoint for evidence-grounded Q&A.
 - Question required, max 800 characters
 - Returns `400` for invalid input
 
-## Portfolio Assistant System
+## RyAgent: Database-Driven Portfolio Assistant
 
-### Data Layer
+RyAgent is an evidence-grounded AI assistant that answers questions about skills and projects using structured data marts. The assistant's responses are dynamically generated from dbt marts (`analytics.mart_project_profile`, `analytics.fct_project_skills`) that determine which projects to surface, which skills to confirm, and what evidence to cite—demonstrating dbt's semantic layer concept in production.
 
-Evidence-grounded data files in `/data`:
+### Architecture
 
-- **`resume_canonical.json`**: Machine-readable resume with skills, experience, technologies
-- **`skills_matrix.json`**: Skills mapped to proof links with confidence levels ("expert" or "strong" only)
-- **`projects.json`**: Project registry with links and stack information
-- **`employer_questions.json`**: Pre-written Q&A with gold answers
+- **Primary Data Source**: Neon Postgres with dbt marts (project profiles, skill mappings, page relationships)
+- **Retrieval**: Skill-first matching with trigram search and alias expansion
+- **Fallback**: JSON-based evidence files when DB mappings are incomplete
+- **Response Generation**: OpenAI GPT-4o-mini with strict guardrails against hallucination
 
-### Frontend Component
+### Features
 
-**`/src/components/PortfolioAssistant.tsx`**
+- Real-time project and skill matching from database queries
+- Evidence links sourced from project pages and dashboards
+- Trace narration showing actual search results
+- Dynamic fallback to resume-based evidence when DB mappings are incomplete
 
-Chat interface for employer Q&A:
-- Message history with evidence links
-- Suggested question chips
-- Skills confirmed badges
-- Missing info display
-- Rate limit error handling
+## Data Management
 
-**Access:** Navigate to `/assistant` route or add to navigation.
-
-### Confidence Levels
-
-Only two levels used:
-- **"expert"**: Multiple proofs, production experience, repeated use
-- **"strong"**: At least one solid proof, demonstrated capability
-
-Never uses "moderate" or "planned".
-
-### Guardrails
-
-- Only confirms skills with proof links
-- Returns "missing_info" for unproven claims
-- No hallucinations - only uses provided JSON data
-- Ignores prompt injection attempts
-- Never reveals system prompts or API keys
-
-## Updating Skills Matrix
-
-When adding new projects or skills:
-
-1. Edit `/data/skills_matrix.json`
-2. Add proof items with:
-   - `type`: "repo" | "work" | "project_page" | "dashboard"
-   - `title`: Descriptive title
-   - `url`: Accessible link
-   - `proof_points`: Array of 1-3 specific bullets
-   - `stack`: Technologies used
-3. Verify confidence level matches evidence
-4. Test with Portfolio Assistant
-
-See `/docs/EVIDENCE_GUIDE.md` for detailed guidelines.
-
-## Project Page Standards
-
-Use `/docs/PROJECT_PAGE_TEMPLATE.md` when creating new project pages to ensure consistent evidence structure.
-
-Required sections:
-- Problem statement
-- Data sources
-- Modeling approach (layered patterns)
-- Transformations (tools/files)
-- Validation/tests
-- Outputs (links)
-- Repo link + key files
-- Skills demonstrated (exact names from skills_matrix.json)
+Portfolio data is managed through dbt marts in Neon Postgres. The system uses structured project profiles, skill mappings, and page relationships to drive evidence-grounded responses. JSON fallback files (`/data`) are maintained for resilience during development and migration.
 
 ## Documentation
 
-- **`/docs/PROJECT_PAGE_TEMPLATE.md`**: Template for consistent project pages
-- **`/docs/EVIDENCE_GUIDE.md`**: How to write proof points and link evidence
+Project documentation and evidence standards are maintained in `/docs`.
 
 ## Tech Stack
 
 - **Frontend**: React + Vite + TypeScript + Tailwind CSS
 - **Backend**: Vercel Serverless Functions (TypeScript)
+- **Database**: Neon Postgres with dbt marts
 - **AI**: OpenAI GPT-4o-mini
 - **Analytics**: Vercel Analytics
 - **Deployment**: Vercel
@@ -186,11 +139,10 @@ Access at `http://localhost:5173` (API routes won't work)
 
 ## Production Checklist
 
-- [ ] `OPENAI_API_KEY` set in Vercel environment variables
-- [ ] `/data` files updated with latest projects
-- [ ] Skills matrix confidence levels verified
+- [ ] `OPENAI_API_KEY` and `DATABASE_URL` set in Vercel environment variables
+- [ ] dbt marts deployed and indexed (trigram indexes for fuzzy matching)
 - [ ] All proof links are accessible
-- [ ] Portfolio Assistant tested with sample questions
+- [ ] RyAgent tested with sample questions
 - [ ] Rate limiting tested
 
 ## File Structure
@@ -215,12 +167,9 @@ Access at `http://localhost:5173` (API routes won't work)
 └── README.md
 ```
 
-## Editing Content
+## Content Management
 
-- **Dashboards**: Edit `reports` array in `src/App.tsx`
-- **Data Projects**: Edit `dataProjects` array in `src/App.tsx`
-- **Skills**: Edit `/data/skills_matrix.json`
-- **Resume**: Edit `/data/resume_canonical.json`
+Portfolio content is managed through structured data models. Projects, skills, and evidence relationships are maintained in dbt marts for consistency and real-time retrieval.
 
 ## License
 
