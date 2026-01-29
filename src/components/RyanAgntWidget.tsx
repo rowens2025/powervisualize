@@ -61,7 +61,7 @@ export default function RyanAgntWidget({ isHomePage = false }: RyanAgntWidgetPro
               <span>💭 Ask me anything about Ryan's skills!</span>
               {/* Bubble tail pointing down to button */}
               <div className="absolute top-full left-1/2 -translate-x-1/2">
-                <div className="w-0 h-0 border-l-[12px] border-r-[12px] border-b-[12px] border-transparent border-b-white"></div>
+                <div className="w-0 h-0 border-l-[12px] border-r-[12px] border-t-[12px] border-transparent border-t-white"></div>
               </div>
             </div>
           </div>

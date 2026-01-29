@@ -7,6 +7,7 @@ type Message = {
   skills_confirmed?: string[];
   evidence_links?: { title: string; url: string }[];
   missing_info?: string[];
+  trace?: string[];
   meta?: {
     blocked?: boolean;
     locked_until?: string;
@@ -126,33 +127,35 @@ export default function RyanAgntDrawer({ isOpen, onClose }: RyanAgntDrawerProps)
     }
     setError(null);
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-    try {
-      const response = await fetch('/api/ask', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          question: userMessage.content,
-          history: messages.map(m => ({ role: m.role, content: m.content }))
-        }),
-        signal: controller.signal
-      });
+      try {
+        const requestStartTime = Date.now();
+        const response = await fetch('/api/ask', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            question: userMessage.content,
+            history: messages.map(m => ({ role: m.role, content: m.content }))
+          }),
+          signal: controller.signal
+        });
 
-      clearTimeout(timeoutId);
+        clearTimeout(timeoutId);
 
-      if (!response.ok) {
-        if (response.status === 429) {
-          throw new Error('Rate limit exceeded. Please wait a moment and try again.');
+        if (!response.ok) {
+          if (response.status === 429) {
+            throw new Error('Rate limit exceeded. Please wait a moment and try again.');
+          }
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.answer || errorData.error || `Error: ${response.statusText}`);
         }
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.answer || errorData.error || `Error: ${response.statusText}`);
-      }
 
-      const data = await response.json();
+        const data = await response.json();
+        const requestDuration = Date.now() - requestStartTime;
       
       // Fast-path responses: add minimal delay for perceived intelligence
       if (data.meta?.fast_path && !isAcknowledgement) {
@@ -173,12 +176,35 @@ export default function RyanAgntDrawer({ isOpen, onClose }: RyanAgntDrawerProps)
         setLastPhoneShownAt(newMessageCount);
       }
       
+      // Display trace with delays if present and request took >700ms
+      if (data.trace && Array.isArray(data.trace) && data.trace.length > 0 && requestDuration > 700) {
+        // Add trace messages one by one with delays
+        for (let i = 0; i < data.trace.length; i++) {
+          const traceMessage: Message = {
+            role: 'assistant',
+            content: data.trace[i],
+            skills_confirmed: [],
+            evidence_links: [],
+            missing_info: [],
+            trace: [data.trace[i]] // Mark as trace message
+          };
+          setMessages(prev => [...prev, traceMessage]);
+          // Delay between trace lines (150-250ms)
+          if (i < data.trace.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 150 + Math.random() * 100));
+          }
+        }
+        // Small delay before final answer
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
       const assistantMessage: Message = {
         role: 'assistant',
         content: answerText,
         skills_confirmed: data.skills_confirmed || [],
         evidence_links: data.evidence_links || [],
         missing_info: data.missing_info || [],
+        trace: data.trace,
         meta: data.meta
       };
 
@@ -308,10 +334,16 @@ export default function RyanAgntDrawer({ isOpen, onClose }: RyanAgntDrawerProps)
                       ? 'bg-gradient-to-r from-cyan-500/20 to-fuchsia-500/20 border border-cyan-500/30'
                       : msg.meta?.blocked
                       ? 'bg-red-900/20 border border-red-800/50'
+                      : msg.trace && Array.isArray(msg.trace) && msg.trace.length > 0 && (!msg.skills_confirmed || msg.skills_confirmed.length === 0)
+                      ? 'bg-slate-800/40 border border-slate-700/50 italic'
                       : 'bg-slate-800/60 border border-slate-700'
                   }`}
                 >
-                  <p className="text-slate-100 whitespace-pre-wrap">{msg.content}</p>
+                  <p className={`whitespace-pre-wrap ${
+                    msg.trace && Array.isArray(msg.trace) && msg.trace.length > 0 && (!msg.skills_confirmed || msg.skills_confirmed.length === 0)
+                      ? 'text-slate-400 text-xs'
+                      : 'text-slate-100'
+                  }`}>{msg.content}</p>
 
                   {msg.skills_confirmed && msg.skills_confirmed.length > 0 && (
                     <div className="mt-2 pt-2 border-t border-slate-700">
