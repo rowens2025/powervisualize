@@ -1,6 +1,6 @@
 # PowerVisualize
 
-Portfolio site with evidence-grounded AI assistant powered by dbt-style analytics engineering.
+Portfolio site with evidence-grounded AI assistant powered by dbt (data build tool) marts and analytics engineering.
 
 ## Quickstart
 
@@ -82,7 +82,7 @@ Portfolio Assistant endpoint for evidence-grounded Q&A.
 
 ## RyAgent: Database-Driven Portfolio Assistant
 
-RyAgent is an evidence-grounded AI assistant that answers questions about skills and projects using structured data marts. The assistant's responses are dynamically generated from dbt marts (`analytics.mart_project_profile`, `analytics.fct_project_skills`) that determine which projects to surface, which skills to confirm, and what evidence to cite—demonstrating dbt's semantic layer concept in production.
+RyAgent is an evidence-grounded AI assistant powered by dbt (data build tool) marts. The assistant's responses are dynamically generated from dbt marts (`analytics.mart_project_profile`, `analytics.fct_project_skills`) that determine which projects to surface, which skills to confirm, and what evidence to cite—demonstrating dbt's semantic layer concept in production.
 
 ### Architecture
 
@@ -100,7 +100,7 @@ RyAgent is an evidence-grounded AI assistant that answers questions about skills
 
 ## Data Management
 
-Portfolio data is managed through dbt marts in Neon Postgres. The system uses structured project profiles, skill mappings, and page relationships to drive evidence-grounded responses. JSON fallback files (`/data`) are maintained for resilience during development and migration.
+Portfolio data is managed through dbt (data build tool) marts in Neon Postgres. The system uses structured project profiles, skill mappings, and page relationships built with dbt to drive evidence-grounded responses. JSON fallback files (`/data`) are maintained for resilience during development and migration.
 
 ## Documentation
 
