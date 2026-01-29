@@ -96,6 +96,11 @@ export default function App() {
         { key: 'nta', label: 'Neighborhoods', src: '/maps/nyc_flood_risk_nta.html' },
       ],
     },
+    {
+      id: 'ryagent-chatbot-dbt-project',
+      title: 'RyAgent Chatbot dbt Project',
+      preview: '/dataprojects/dp2/pictures/ChatBot.png',
+    },
     { id: 'uc', title: 'Under Construction' },
   ];
 
@@ -152,6 +157,18 @@ export default function App() {
 
   // Function to parse URL and set appropriate state
   const parseUrlAndSetState = (path: string) => {
+    // Prevent React Router from hijacking /dbt-docs - let it serve as static files
+    if (path.startsWith('/dbt-docs')) {
+      // Redirect to the actual static file
+      if (path === '/dbt-docs' || path === '/dbt-docs/') {
+        window.location.href = '/dbt-docs/index.html';
+      } else {
+        // For sub-paths, let the server handle it
+        window.location.href = path;
+      }
+      return;
+    }
+
     // Redirect /assistant to home (widget is now global)
     if (path === '/assistant') {
       window.history.replaceState({ route: 'home' }, '', '/');
@@ -222,6 +239,10 @@ export default function App() {
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
       const path = window.location.pathname;
+      // Prevent React Router from hijacking /dbt-docs
+      if (path.startsWith('/dbt-docs')) {
+        return;
+      }
       parseUrlAndSetState(path);
     };
 
@@ -229,9 +250,14 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Initialize route from URL on mount
+  // Initialize route from URL on mount - prevent React Router from hijacking /dbt-docs
   useEffect(() => {
-    parseUrlAndSetState(window.location.pathname);
+    const path = window.location.pathname;
+    // Prevent React Router from hijacking /dbt-docs - let static files be served
+    if (path.startsWith('/dbt-docs')) {
+      return;
+    }
+    parseUrlAndSetState(path);
   }, []);
 
   const isFloodDashboard = route === 'data-projects' && openDashboard && openDataProject === 'dp1';
@@ -367,6 +393,13 @@ export default function App() {
                   }
                 }}
               />
+            ) : openDataProject === 'ryagent-chatbot-dbt-project' ? (
+              <RyAgentProjectViewer
+                onBack={() => {
+                  setOpenDataProject(null);
+                  window.history.pushState({ route: 'data-projects' }, '', '/data-projects');
+                }}
+              />
             ) : (
               <DataProjectViewer
                 project={dataProjects.find((p) => p.id === openDataProject)!}
@@ -416,6 +449,14 @@ function DataProjectList({
             Applied analytics projects built with Python (GeoPandas + Folium), focused on turning spatial data into a narrative.
           </p>
         </div>
+        <a
+          href="/dbt-docs/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-4 py-2 rounded-xl border border-slate-700 hover:bg-slate-800 transition-all duration-200 hover:translate-y-[-1px] text-sm"
+        >
+          dbt Docs →
+        </a>
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -620,6 +661,200 @@ function DataProjectViewer({ project, onBack, onOpenDashboard }: { project: Data
           ) : (
             <div className="w-full h-full grid place-items-center text-slate-500">Map not configured.</div>
           )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------------ */
+/* RyAgent Project Viewer               */
+/* ------------------------------------ */
+
+function RyAgentProjectViewer({ onBack }: { onBack: () => void }) {
+  const containerWidth = 'w-full md:w-2/3 mx-auto';
+  const [isDbtDocsExpanded, setIsDbtDocsExpanded] = useState(false);
+
+  return (
+    <section className="space-y-6">
+      <div className="flex items-center justify-between">
+        <button
+          onClick={onBack}
+          className="px-3 py-2 rounded-xl border border-slate-700 hover:bg-slate-800 transition-all duration-200 hover:translate-y-[-1px]"
+        >
+          Back
+        </button>
+        <h2 className="text-lg font-semibold ml-6">RyAgent Chatbot dbt Project</h2>
+        <div />
+      </div>
+
+      {/* Main Description */}
+      <div className={`${containerWidth} max-w-3xl`}>
+        <p className="text-slate-300 leading-relaxed">
+          This project uses dbt-style analytics engineering to turn portfolio metadata into a governed warehouse layer that the chatbot can query deterministically. Raw tables (projects, pages, skills, and bridge tables) are modeled into a dedicated analytics schema using a layered approach: staging models normalize and type-clean source data, dimensional models define stable entities (projects/pages/skills), and marts/fact tables provide agent-friendly aggregates and denormalized views (e.g., project profiles and skill counts). dbt tests enforce correctness (unique keys, non-null constraints, relationship integrity, and accepted values), and dbt Docs produces an interactive lineage graph so the entire transformation pipeline is auditable end-to-end.
+        </p>
+      </div>
+
+      {/* How it Works Section */}
+      <div className={`${containerWidth} max-w-3xl rounded-3xl bg-slate-900/60 border border-slate-800 overflow-hidden`}>
+        <div className="px-6 py-5 border-b border-slate-800">
+          <h3 className="text-xl font-semibold">How it works</h3>
+        </div>
+        <div className="px-6 py-5 space-y-4">
+          <div>
+            <h4 className="font-medium text-cyan-400 mb-2">Guardrails</h4>
+            <p className="text-slate-300 text-sm">
+              Evidence-grounded responses, scope-limited to portfolio data, safe refusals for out-of-scope questions, and strict no-hallucination rules ensure accurate, trustworthy answers.
+            </p>
+          </div>
+          <div>
+            <h4 className="font-medium text-cyan-400 mb-2">Data</h4>
+            <p className="text-slate-300 text-sm">
+              Neon Postgres serves as the source of truth, storing portfolio metadata (projects, skills, pages) that powers all responses.
+            </p>
+          </div>
+          <div>
+            <h4 className="font-medium text-cyan-400 mb-2">dbt</h4>
+            <p className="text-slate-300 text-sm">
+              Staging models normalize and clean source data, dimensional models define stable entities, and marts/fact tables provide agent-friendly aggregates. dbt tests enforce data quality and correctness throughout the pipeline.
+            </p>
+          </div>
+          <div>
+            <h4 className="font-medium text-cyan-400 mb-2">Explainable trace</h4>
+            <p className="text-slate-300 text-sm">
+              Real counts from marts are displayed in trace messages, showing exactly what was searched and found—no fabricated narration, only truthful query results.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Schema Diagrams Section */}
+      <div className={`${containerWidth} max-w-3xl rounded-3xl bg-slate-900/60 border border-slate-800 overflow-hidden`}>
+        <div className="px-6 py-5 border-b border-slate-800">
+          <h3 className="text-xl font-semibold">Schema & Lineage</h3>
+        </div>
+        <div className="px-6 py-5 space-y-6">
+          <div>
+            <h4 className="font-medium mb-3">Raw Schema ERD</h4>
+            <div className="rounded-lg overflow-hidden border border-slate-700 bg-slate-950">
+              <iframe
+                title="RyAgent Raw Schema ERD"
+                src="https://dbdiagram.io/e/697bdeb3bd82f5fce2126e58/697bdee9bd82f5fce21271b7"
+                className="w-full"
+                style={{ height: '700px', border: 'none' }}
+                loading="lazy"
+                allowFullScreen
+              />
+            </div>
+            <a
+              href="https://dbdiagram.io/e/697bdeb3bd82f5fce2126e58/697bdee9bd82f5fce21271b7"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-block text-xs text-slate-400 hover:text-cyan-400 transition-colors"
+            >
+              Open in new tab →
+            </a>
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-medium">dbt Docs Graph & dbt Lineage</h4>
+              <button
+                onClick={() => setIsDbtDocsExpanded(!isDbtDocsExpanded)}
+                className="px-3 py-1.5 text-xs rounded-lg border border-slate-600 hover:border-slate-500 bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 hover:text-white transition-all duration-200 flex items-center gap-1.5"
+                aria-label={isDbtDocsExpanded ? 'Collapse dbt docs' : 'Expand dbt docs'}
+              >
+                {isDbtDocsExpanded ? (
+                  <>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    </svg>
+                    Collapse
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                    Expand
+                  </>
+                )}
+              </button>
+            </div>
+            {isDbtDocsExpanded && (
+              <div
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                onClick={() => setIsDbtDocsExpanded(false)}
+                aria-hidden="true"
+              />
+            )}
+            <div className={`w-full overflow-hidden rounded-2xl border border-slate-700 bg-white transition-all duration-300 ${isDbtDocsExpanded ? 'fixed inset-4 z-50 shadow-2xl' : 'relative'}`}>
+              {isDbtDocsExpanded && (
+                <div className="absolute top-4 right-4 z-10">
+                  <button
+                    onClick={() => setIsDbtDocsExpanded(false)}
+                    className="p-2 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-white transition-colors"
+                    aria-label="Close expanded view"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+              <iframe
+                title="dbt Docs Graph & Lineage"
+                src="/dbt-docs/"
+                className={`block w-full bg-white transition-all duration-300 ${isDbtDocsExpanded ? 'h-[calc(100vh-8rem)]' : 'h-[75vh] sm:h-[80vh] min-h-[700px]'}`}
+                style={{ border: 'none' }}
+                loading="lazy"
+                allowFullScreen
+                referrerPolicy="no-referrer"
+              />
+            </div>
+            <a
+              href="/dbt-docs/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-block text-xs text-slate-400 hover:text-cyan-400 transition-colors"
+            >
+              Open in new tab →
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* Links Section */}
+      <div className={`${containerWidth} max-w-3xl rounded-3xl bg-slate-900/60 border border-slate-800 overflow-hidden`}>
+        <div className="px-6 py-5 border-b border-slate-800">
+          <h3 className="text-xl font-semibold">Resources</h3>
+        </div>
+        <div className="px-6 py-5">
+          <div className="flex flex-wrap gap-3">
+            <a
+              href="/dbt-docs/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500/20 to-fuchsia-500/20 border border-cyan-500/30 hover:border-cyan-500/50 transition-all duration-200 hover:scale-[1.02] active:scale-[0.99]"
+            >
+              dbt Docs
+            </a>
+            <a
+              href="https://github.com/rowens2025/powervisualize/tree/main/dbt/ryagent_warehouse/models"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 rounded-xl border border-slate-700 hover:bg-slate-800 transition-all duration-200 hover:translate-y-[-1px]"
+            >
+              dbt Models (GitHub)
+            </a>
+            <a
+              href="https://github.com/rowens2025/powervisualize/blob/main/api/ask.ts"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 rounded-xl border border-slate-700 hover:bg-slate-800 transition-all duration-200 hover:translate-y-[-1px]"
+            >
+              API Handler (GitHub)
+            </a>
+          </div>
         </div>
       </div>
     </section>

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview --port 5173"
+    "preview": "vite preview --port 5173",
+    "gen:dbt-docs": "cd dbt/ryagent_warehouse && dbt docs generate && cd ../.. && node scripts/gen-dbt-docs.mjs"
   },
   "dependencies": {
     "@vercel/analytics": "^1.6.1",

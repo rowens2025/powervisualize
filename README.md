@@ -156,7 +156,7 @@ Access at `http://localhost:5173` (API routes won't work)
 │   ├── resume_canonical.json
 │   ├── skills_matrix.json
 │   ├── projects.json
-│   └── employer_questions.json
+│   └── prospect_questions.json
 ├── docs/
 │   ├── PROJECT_PAGE_TEMPLATE.md
 │   └── EVIDENCE_GUIDE.md

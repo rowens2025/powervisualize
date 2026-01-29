@@ -9,13 +9,12 @@ dist
 .env
 .env*.local
 
-# Resume files
-*resume*.pdf
-*resume*.docx
-*resume*.doc
-resume.pdf
-resume.docx
-resume.doc
+# Private resume files (keep data/resume_canonical.json committed)
+Resume*.docx
+Resume*.pdf
+Resume*.doc
+resumes/
+private/
 
 # Large raw data files (use Git LFS for these)
 *.mbtiles

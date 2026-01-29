@@ -24,7 +24,7 @@ const SUGGESTED_QUESTIONS = [
   "Can Ryan build production BI platforms?"
 ];
 
-const RYAN_PHONE = "(215) 485-6592";
+// Phone number removed - use contact section instead
 
 type RyanAgntDrawerProps = {
   isOpen: boolean;
@@ -39,7 +39,7 @@ export default function RyanAgntDrawer({ isOpen, onClose }: RyanAgntDrawerProps)
   const [isLocked, setIsLocked] = useState(false);
   const [lockedUntil, setLockedUntil] = useState<string | null>(null);
   const [messageCount, setMessageCount] = useState(0);
-  const [lastPhoneShownAt, setLastPhoneShownAt] = useState(0);
+  const [lastContactShownAt, setLastContactShownAt] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -61,7 +61,7 @@ export default function RyanAgntDrawer({ isOpen, onClose }: RyanAgntDrawerProps)
     // Load messages from sessionStorage on mount
     const saved = sessionStorage.getItem('ryanAgntMessages');
     const savedCount = sessionStorage.getItem('ryanAgntMessageCount');
-    const savedLastPhone = sessionStorage.getItem('ryanAgntLastPhone');
+    const savedLastContact = sessionStorage.getItem('ryanAgntLastContact');
     
     if (saved) {
       try {
@@ -78,9 +78,9 @@ export default function RyanAgntDrawer({ isOpen, onClose }: RyanAgntDrawerProps)
           setMessageCount(userMsgCount);
         }
         
-        // Restore last phone shown
-        if (savedLastPhone) {
-          setLastPhoneShownAt(parseInt(savedLastPhone, 10));
+        // Restore last contact shown
+        if (savedLastContact) {
+          setLastContactShownAt(parseInt(savedLastContact, 10));
         }
         
         // Check if locked
@@ -103,9 +103,9 @@ export default function RyanAgntDrawer({ isOpen, onClose }: RyanAgntDrawerProps)
     if (messages.length > 0) {
       sessionStorage.setItem('ryanAgntMessages', JSON.stringify(messages));
       sessionStorage.setItem('ryanAgntMessageCount', messageCount.toString());
-      sessionStorage.setItem('ryanAgntLastPhone', lastPhoneShownAt.toString());
+      sessionStorage.setItem('ryanAgntLastContact', lastContactShownAt.toString());
     }
-  }, [messages, messageCount, lastPhoneShownAt]);
+  }, [messages, messageCount, lastContactShownAt]);
 
   const handleSend = async () => {
     if (!input.trim() || loading || isLocked) return;
@@ -132,6 +132,19 @@ export default function RyanAgntDrawer({ isOpen, onClose }: RyanAgntDrawerProps)
 
       try {
         const requestStartTime = Date.now();
+        
+        // Extract page context from current location
+        const pageContext = {
+          path: window.location.pathname,
+          title: document.title,
+          pageSlug: window.location.pathname.split('/').filter(Boolean).pop() || '',
+          pageType: window.location.pathname.startsWith('/data-projects/') ? 'data-project' :
+                    window.location.pathname.startsWith('/dashboards/') ? 'dashboard' :
+                    window.location.pathname.startsWith('/dashboards') ? 'dashboards-list' :
+                    window.location.pathname.startsWith('/data-projects') ? 'data-projects-list' :
+                    window.location.pathname === '/' ? 'home' : 'other'
+        };
+        
         const response = await fetch('/api/ask', {
           method: 'POST',
           headers: {
@@ -139,7 +152,8 @@ export default function RyanAgntDrawer({ isOpen, onClose }: RyanAgntDrawerProps)
           },
           body: JSON.stringify({
             question: userMessage.content,
-            history: messages.map(m => ({ role: m.role, content: m.content }))
+            history: messages.map(m => ({ role: m.role, content: m.content })),
+            pageContext
           }),
           signal: controller.signal
         });
@@ -166,19 +180,23 @@ export default function RyanAgntDrawer({ isOpen, onClose }: RyanAgntDrawerProps)
       const newMessageCount = messageCount + 1;
       setMessageCount(newMessageCount);
       
-      // Determine if we should show phone number
+      // Determine if we should show contact section link
       // Show after 3+ questions, then every 3 messages after that
-      const shouldShowPhone = newMessageCount >= 3 && (newMessageCount - lastPhoneShownAt >= 3 || lastPhoneShownAt === 0);
+      const shouldShowContact = newMessageCount >= 3 && (newMessageCount - lastContactShownAt >= 3 || lastContactShownAt === 0);
       
       let answerText = data.answer || 'No answer provided.';
-      if (shouldShowPhone && !data.meta?.fast_path) {
-        answerText += ' For further clarification call my human friend, the real Ryan, for answers at 215-485-6592';
-        setLastPhoneShownAt(newMessageCount);
+      // Remove any phone numbers that might have been included in the response
+      answerText = answerText.replace(/\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/g, '').replace(/call.*ryan.*for.*answers.*at/gi, 'visit the contact section for').trim();
+      
+      if (shouldShowContact && !data.meta?.fast_path) {
+        answerText += ' For further clarification, visit the contact section.';
+        setLastContactShownAt(newMessageCount);
       }
       
       // Display trace with delays if present and request took >700ms
+      // Faster cycling: reduced delays for quicker progression
       if (data.trace && Array.isArray(data.trace) && data.trace.length > 0 && requestDuration > 700) {
-        // Add trace messages one by one with delays
+        // Add trace messages one by one with shorter delays
         for (let i = 0; i < data.trace.length; i++) {
           const traceMessage: Message = {
             role: 'assistant',
@@ -189,13 +207,13 @@ export default function RyanAgntDrawer({ isOpen, onClose }: RyanAgntDrawerProps)
             trace: [data.trace[i]] // Mark as trace message
           };
           setMessages(prev => [...prev, traceMessage]);
-          // Delay between trace lines (150-250ms)
+          // Faster delay between trace lines (50-100ms instead of 150-250ms)
           if (i < data.trace.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 150 + Math.random() * 100));
+            await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 50));
           }
         }
-        // Small delay before final answer
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // Shorter delay before final answer (100ms instead of 200ms)
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
       
       const assistantMessage: Message = {
@@ -218,10 +236,10 @@ export default function RyanAgntDrawer({ isOpen, onClose }: RyanAgntDrawerProps)
     } catch (err: any) {
       clearTimeout(timeoutId);
       
-      let errorMessage = 'RyAgent hit a snag—try again, or text Ryan: ' + RYAN_PHONE;
+      let errorMessage = 'RyAgent hit a snag—try again, or visit the contact section.';
       
       if (err.name === 'AbortError') {
-        errorMessage = 'Request timed out. Please try again, or text Ryan: ' + RYAN_PHONE;
+        errorMessage = 'Request timed out. Please try again, or visit the contact section.';
       } else if (err.message) {
         errorMessage = err.message;
       }
@@ -230,7 +248,7 @@ export default function RyanAgntDrawer({ isOpen, onClose }: RyanAgntDrawerProps)
       
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again, or text Ryan: ' + RYAN_PHONE,
+        content: 'Sorry, I encountered an error. Please try again, or visit the contact section.',
         skills_confirmed: [],
         evidence_links: [],
         missing_info: []
@@ -415,7 +433,7 @@ export default function RyanAgntDrawer({ isOpen, onClose }: RyanAgntDrawerProps)
           <div className="px-4 py-3 border-t border-slate-800 bg-slate-900/40">
             {lockedMessage && (
               <div className="mb-2 px-3 py-2 bg-red-900/20 border border-red-800/50 rounded-lg text-xs text-red-300">
-                {lockedMessage} Text Ryan: {RYAN_PHONE}
+                {lockedMessage} Visit the <a href="/contact" className="underline text-red-200 hover:text-red-100">contact section</a> for direct contact.
               </div>
             )}
             

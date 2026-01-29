@@ -26,4 +26,4 @@ select
 from {{ ref('dim_projects') }} p
 left join skill_counts sc on sc.project_id = p.project_id
 left join page_counts pc on pc.project_id = p.project_id
-group by p.project_id, p.slug, sc.skills_count, sc.primary_skills_count
+group by p.project_id, p.slug, coalesce(sc.skills_count, 0), coalesce(sc.primary_skills_count, 0)
