@@ -30,6 +30,10 @@
     {
       "source": "/dbt-docs/(.*)",
       "destination": "/dbt-docs/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
