@@ -32,7 +32,7 @@
       "destination": "/dbt-docs/$1"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!@vite|@react-refresh|src/|node_modules/|api/|previews/|dataprojects/|maps/|dbt-docs/|PVFavicon.png|PVLogo.png|Me/).*)",
       "destination": "/index.html"
     }
   ]

@@ -292,6 +292,7 @@ function rankProjects(
 ): Array<{ project_id: string; slug: string; name: string; proof_weight?: number; rank_score: number }> {
   const isAssistantQ = isAssistantQuestion(question);
   const isPlatform = skill ? isPlatformSkill(skill) : false;
+  const isDbtQuestion = /\bdbt\b/i.test(question);
   
   return candidates.map(candidate => {
     const counts = countsMap.get(candidate.project_id) || {};
@@ -309,14 +310,20 @@ function rankProjects(
       categoryWeight = category === 'project' ? 100 : category === 'dashboard' ? 50 : 0;
     }
     
-    // Penalty for ryagent unless question is about assistant
+    // Penalty for ryagent unless question is about assistant OR dbt
     let ryagentPenalty = 0;
-    if (candidate.slug === 'ryagent' && !isAssistantQ) {
+    if (candidate.slug === 'ryagent' && !isAssistantQ && !isDbtQuestion) {
       ryagentPenalty = isPlatform ? -200 : -100; // Strong penalty for platform skills
     }
     
-    // Rank score: category weight + proof_weight (1-5) * 10 + skills_count - penalty
-    const rankScore = categoryWeight + (proofWeight * 10) + skillsCount + ryagentPenalty;
+    // Bonus for ryagent when dbt is mentioned
+    let ryagentBonus = 0;
+    if (candidate.slug === 'ryagent' && isDbtQuestion) {
+      ryagentBonus = 200; // Strong bonus for dbt questions
+    }
+    
+    // Rank score: category weight + proof_weight (1-5) * 10 + skills_count - penalty + bonus
+    const rankScore = categoryWeight + (proofWeight * 10) + skillsCount + ryagentPenalty + ryagentBonus;
     
     return {
       ...candidate,
