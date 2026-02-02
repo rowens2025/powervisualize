@@ -128,8 +128,10 @@ function classifyIntent(question: string, history: ChatMsg[], pageContext?: { pa
   // Personality detection (likes/favorites/interests)
   const personalityPatterns = [
     /\b(does ryan like|does ryan enjoy|does ryan love|ryan.*favorite|ryan.*favourite|ryan.*hobby|ryan.*hobbies|ryan.*interest|ryan.*interests)\b/i,
-    /\b(what does ryan like|what.*ryan.*favorite|snowboarding|skiing|food|movies|drinks|music|sports|travel)\b/i,
-    /\b(ryan.*like.*snowboarding|ryan.*like.*skiing|ryan.*like.*food|ryan.*like.*movie)\b/i
+    /\b(what does ryan like|what.*ryan.*favorite|what.*ryan.*enjoy|what.*ryan.*love)\b/i,
+    /\b(does he like|does he enjoy|does he love|what does he like|what.*he.*favorite)\b/i,
+    /\b(favorite movie|favourite movie|favorite movies|favourite movies|what.*favorite|what.*favourite)\b/i,
+    /\b(snowboarding|skiing|food|movies|movie|drinks|music|sports|travel|lord.*ring|lord.*rings|lotr)\b/i
   ];
   
   if (personalityPatterns.some(p => p.test(lower))) {
@@ -292,7 +294,7 @@ function rankProjects(
 ): Array<{ project_id: string; slug: string; name: string; proof_weight?: number; rank_score: number }> {
   const isAssistantQ = isAssistantQuestion(question);
   const isPlatform = skill ? isPlatformSkill(skill) : false;
-  const isDbtQuestion = /\bdbt\b/i.test(question);
+  const isDbtQuestion = /\b(?:dbt|data build tool)\b/i.test(question);
   
   return candidates.map(candidate => {
     const counts = countsMap.get(candidate.project_id) || {};
@@ -600,31 +602,98 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return;
         }
 
-        // Extract the specific item being asked about (e.g., "snowboarding")
+        // Extract the specific item being asked about - context-aware matching
         const lowerQuestion = question.toLowerCase();
-        const personalityKeywords = ['snowboarding', 'skiing', 'food', 'movies', 'drinks', 'music', 'sports', 'travel', 'favorite', 'favourite', 'hobby', 'interest'];
+        
+        // Context detection - understand what category of question this is
+        const isSportQuestion = /\b(sport|sports|ski|skiing|snowboard|snowboarding|athletic|athletics)\b/i.test(lowerQuestion);
+        const isFavoriteMovieQuestion = (lowerQuestion.includes('favorite') || lowerQuestion.includes('favourite')) && (lowerQuestion.includes('movie') || lowerQuestion.includes('movies'));
+        const isFavoriteQuestion = lowerQuestion.includes('favorite') || lowerQuestion.includes('favourite');
+        
+        // Expanded keyword list with context mapping
+        const personalityKeywords = [
+          'snowboarding', 'snowboard', 'skiing', 'ski', 'food', 'foods', 'movie', 'movies', 
+          'drink', 'drinks', 'music', 'sport', 'sports', 'travel', 
+          'favorite', 'favourites', 'favourite', 'favorites', 
+          'hobby', 'hobbies', 'interest', 'interests',
+          'lord', 'rings', 'ring'
+        ];
+        
+        // Find mentioned item in question
         const mentionedItem = personalityKeywords.find(kw => lowerQuestion.includes(kw));
 
-        // Query personality for primary member (Ryan) - prefer dbt marts
-        const personalityQuery = await pool.query(`
-          select p.category, p.subcategory, p.value, p.public
-          from analytics.fct_team_member_personality tmp
-          join analytics.dim_personality p on p.personality_id = tmp.personality_id
-          join public.team_members tm on tm.team_member_id = tmp.team_member_id
-          where tm.primary_member = true
-            and p.public = true
-          ${mentionedItem ? `and (p.value ilike $1 or p.subcategory ilike $1)` : ''}
-        `, mentionedItem ? [`%${mentionedItem}%`] : []);
+        // Query personality for primary member (Ryan) - build query safely
+        let queryParams: string[] = [];
+        let queryFilter = '';
+        
+        if (isFavoriteMovieQuestion) {
+          // For favorite movie questions, search in favorites category for movie-related items
+          queryFilter = `and p.category = 'favorites' and (p.subcategory ilike $1 or p.value ilike $1 or p.value ilike '%lord%' or p.value ilike '%ring%')`;
+          queryParams = ['%movie%'];
+        } else if (isSportQuestion && !mentionedItem) {
+          // Sport question but no specific sport mentioned - search for sports-related items
+          queryFilter = `and (p.value ilike $1 or p.subcategory ilike $2 or p.subcategory ilike $3)`;
+          queryParams = ['%ski%', '%sport%', '%snowboard%'];
+        } else if (isSportQuestion && mentionedItem) {
+          // Sport question with specific sport mentioned
+          queryFilter = `and (p.value ilike $1 or p.subcategory ilike $1)`;
+          queryParams = [`%${mentionedItem}%`];
+        } else if (isFavoriteQuestion && mentionedItem) {
+          // Favorite question with specific item - search in favorites category
+          queryFilter = `and p.category = 'favorites' and (p.value ilike $1 or p.subcategory ilike $1)`;
+          queryParams = [`%${mentionedItem}%`];
+        } else if (mentionedItem) {
+          // Specific item mentioned - search broadly
+          queryFilter = `and (p.value ilike $1 or p.subcategory ilike $1)`;
+          queryParams = [`%${mentionedItem}%`];
+        } else {
+          // General personality question - get all favorites/interests (no params needed)
+          queryFilter = `and (p.category = 'favorites' or p.category = 'interests')`;
+        }
+        
+        // Execute query - only pass params if we have them
+        const personalityQuery = queryParams.length > 0
+          ? await pool.query(`
+              select p.category, p.subcategory, p.value, p.public
+              from analytics.fct_team_member_personality tmp
+              join analytics.dim_personality p on p.personality_id = tmp.personality_id
+              join public.team_members tm on tm.team_member_id = tmp.team_member_id
+              where tm.primary_member = true
+                and p.public = true
+              ${queryFilter}
+            `, queryParams)
+          : await pool.query(`
+              select p.category, p.subcategory, p.value, p.public
+              from analytics.fct_team_member_personality tmp
+              join analytics.dim_personality p on p.personality_id = tmp.personality_id
+              join public.team_members tm on tm.team_member_id = tmp.team_member_id
+              where tm.primary_member = true
+                and p.public = true
+              ${queryFilter}
+            `);
 
         const personalityItems = personalityQuery.rows;
 
-        if (mentionedItem && personalityItems.length > 0) {
-          // Specific item found
+        if (personalityItems.length > 0) {
+          // Found personality items
           const item = personalityItems[0];
+          let answer = `Yes—Ryan has ${item.value} listed as a ${item.subcategory} in his ${item.category}.`;
+          const evidenceLinks: { title: string; url: string }[] = [];
+          
+          // Check if this is Lord of the Rings related and add dashboard connection
+          const itemValueLower = item.value.toLowerCase();
+          if (itemValueLower.includes('lord') && itemValueLower.includes('ring')) {
+            answer += ` He's built a fun dashboard called "Over and Back Again: Tracking Steps" that tracks your steps progress against Frodo's journey to Mordor. It's a lighthearted way to combine his love of the movies with data visualization.`;
+            evidenceLinks.push({
+              title: 'Over and Back Again: Tracking Steps',
+              url: 'https://www.powervisualize.com/dashboards/over-and-back-again-tracking-steps'
+            });
+          }
+          
           res.status(200).json({
-            answer: `Yes—Ryan has ${item.value} listed as a ${item.subcategory} in his ${item.category}.`,
+            answer,
             skills_confirmed: [],
-            evidence_links: [],
+            evidence_links: evidenceLinks,
             missing_info: [],
             trace: [`Found ${personalityItems.length} matching personality attribute${personalityItems.length > 1 ? 's' : ''}…`],
             meta: { intent: 'PERSONALITY', sources_used: ['db:personality', 'db:team_member_personality'] }
@@ -956,8 +1025,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 console.warn('[API] Fabric fuzzy match failed:', fabricErr);
               }
             }
-            // Add dbt detection (case-insensitive)
-            if (lowerQuestion.includes('dbt') && !detectedSkill) {
+            // Add dbt detection (case-insensitive) - also detect "data build tool"
+            if ((lowerQuestion.includes('dbt') || lowerQuestion.includes('data build tool')) && !detectedSkill) {
               try {
                 const dbtMatchResult = await pool.query(`
                   select name as skill_name
@@ -1537,10 +1606,10 @@ CRITICAL RULES:
 7. Write in a calm, senior analytics engineer tone
 8. When uncertain or cannot confirm from evidence, explicitly state "I'm not certain about this from the available evidence" or "I cannot confirm this from current portfolio evidence"
 9. QUALITY & TESTING ASSUMPTIONS: When asked about testing, validation, quality, rigor, or best practices, assume senior-level mastery by default. Frame answers as "Yes — as expected of a senior/principal-level data engineer" and cite evidence like layered modeling, validation logic, CI/CD, governance, monitoring. Never respond with uncertainty unless explicitly lacking evidence.
-10. DBT MAPPING: If asked about dbt (data build tool), ALWAYS mention that RyAgent itself is powered by a lightweight dbt data warehouse. The chatbot's responses, guardrails, and logic are driven by dbt marts (analytics.mart_project_profile, analytics.fct_project_skills, analytics.fct_project_counts) that determine which projects to surface, which skills to confirm, and what evidence to cite. This is a production example of dbt's semantic layer concept - structured data models driving intelligent, evidence-grounded responses. FIRST check database_marts.matched_projects - if the "ryagent" project exists there, that IS proof of dbt usage. The ryagent project demonstrates dbt in production: it uses dbt marts to power its own responses. NEVER say "dbt-core is not evidenced" or "cannot confirm dbt" if database_marts.matched_projects contains the ryagent project. If ryagent is in matched_projects, confirm dbt as a skill and cite ryagent as evidence with the link: {title: "RyAgent Chatbot dbt Project", url: "https://www.powervisualize.com/data-projects/ryagent-chatbot-dbt-project"}. If database_marts.matched_projects is empty or has no DBT projects, also explain dbt-style analytics engineering: dbt models → Synapse/Fabric layered views and gold tables, dbt tests → data validation/CDC checks/KPI reconciliation, dbt semantic layer → Power BI semantic models.
+10. DBT MAPPING: If asked about "dbt" OR "data build tool" (they are the same thing - dbt stands for "data build tool"), ALWAYS mention that RyAgent itself is powered by a lightweight dbt data warehouse. The chatbot's responses, guardrails, and logic are driven by dbt marts (analytics.mart_project_profile, analytics.fct_project_skills, analytics.fct_project_counts) that determine which projects to surface, which skills to confirm, and what evidence to cite. This is a production example of dbt's semantic layer concept - structured data models driving intelligent, evidence-grounded responses. FIRST check database_marts.matched_projects - if the "ryagent" project exists there, that IS proof of dbt usage. The ryagent project demonstrates dbt in production: it uses dbt marts to power its own responses. NEVER say "dbt-core is not evidenced" or "cannot confirm dbt" if database_marts.matched_projects contains the ryagent project. If ryagent is in matched_projects, confirm dbt as a skill and cite ryagent as evidence with the link: {title: "RyAgent Chatbot dbt Project", url: "https://www.powervisualize.com/data-projects/ryagent-chatbot-dbt-project"}. If database_marts.matched_projects is empty or has no DBT projects, also explain dbt-style analytics engineering: dbt models → Synapse/Fabric layered views and gold tables, dbt tests → data validation/CDC checks/KPI reconciliation, dbt semantic layer → Power BI semantic models.
 11. RYAGENT ARCHITECTURE: If asked "how was this chat agent built", "how does RyAgent work", "how was RyAgent built", "how is the chatbot built", or similar questions about the chatbot's architecture, respond with: "RyAgent is built on a lightweight dbt data warehouse architecture. The system uses Neon Postgres to store portfolio data (projects, skills, pages) transformed through dbt marts (analytics.mart_project_profile, analytics.fct_project_skills, analytics.fct_project_counts). These marts drive the retrieval logic: skill-first matching with PostgreSQL trigram search, project ranking by relevance, and evidence linking. The chatbot uses OpenAI GPT-4o-mini with strict guardrails against hallucination, ensuring responses are grounded in actual database evidence. The frontend is React + TypeScript, and the API runs on Vercel serverless functions. This demonstrates dbt's semantic layer concept—structured data models driving intelligent, evidence-grounded AI responses." Include evidence links: [{title: "RyAgent Chatbot dbt Project", url: "https://www.powervisualize.com/data-projects/ryagent-chatbot-dbt-project"}, {title: "Portfolio Site", url: "https://www.powervisualize.com"}, {title: "GitHub Repository", url: "https://github.com/rowens2025/powervisualize"}]. Skills confirmed: ["dbt", "PostgreSQL", "dbt marts", "Data Modeling", "React", "TypeScript", "Vercel", "OpenAI API"].
 12. WEBSITE & CODE EXPLANATION: If asked about specific parts of the website, code, or technical implementation details (e.g., "how does the map work", "what technology powers the dashboards", "how is the portfolio site built", "what stack is used"), you may explain based on the canonical skillsets context and matched projects. For the portfolio site itself: React + Vite + Tailwind CSS frontend, Vercel serverless functions for API, Neon Postgres with dbt marts for data layer, OpenAI API for chat responses. For data projects: reference the matched_projects data which includes stack information and proof points. For dashboards: Power BI with DAX, M, Python visualizations, and Deneb custom visuals. Be specific and technical when explaining architecture, but only use information from provided data sources.
-13. WORK-STYLE/MOTIVATION QUESTIONS: If asked about whether Ryan likes working, enjoys his job, is passionate about data, what motivates him, or his favorites/interests, respond affirmatively and professionally. Use evidence: builds end-to-end data products, automation focus, continuous learning, relocating to NYC for career growth, comprehensive portfolio demonstrates sustained investment. If database_marts.personality data is provided, use that as the PRIMARY source for favorites, interests, values, and personal preferences. The personality data includes categories like 'favorites', 'values', 'location' with specific subcategories and values. Mention interests naturally from personality data if available, otherwise use canonical context: skiing/snowboarding (Beaver Creek is favorite mountain), cooking, eating out (favorites: pizza, cheesesteaks, Indian food, oxtail), concerts, parks/hiking, marathon training (13km, probably training forever). Sports: die-hard Eagles fan (go birds!), loves watching football and playing soccer. Coding: Python is favorite language, but SQL was his first love; also learning Portuguese. Favorite places: Caribbean, France, Broad Street when Eagles won Super Bowl. Favorite drink: whiskey or water (preferably both). Always end with "To learn more, visit the contact section." Do NOT refuse these as "not evidenced"—they are answerable professional-personal questions.
+13. WORK-STYLE/MOTIVATION QUESTIONS: If asked about whether Ryan likes working, enjoys his job, is passionate about data, what motivates him, or his favorites/interests, respond affirmatively and professionally. Use evidence: builds end-to-end data products, automation focus, continuous learning, relocating to NYC for career growth, comprehensive portfolio demonstrates sustained investment. If database_marts.personality data is provided, use that as the PRIMARY source for favorites, interests, values, and personal preferences. The personality data includes categories like 'favorites', 'values', 'location' with specific subcategories and values. When answering personality questions, THINK CONTEXTUALLY: If asked about "sports" or "favorite sport", look for skiing, snowboarding, or other sports-related items in personality data. If asked "does he ski?" or "does he snowboard?", search for skiing/snowboarding in personality data. If asked about movies or favorite movies, look for movie-related items. Use personality data directly when available - it IS evidence. Mention interests naturally from personality data if available, otherwise use canonical context: skiing/snowboarding (Beaver Creek is favorite mountain), cooking, eating out (favorites: pizza, cheesesteaks, Indian food, oxtail), concerts, parks/hiking, marathon training (13km, probably training forever). Sports: die-hard Eagles fan (go birds!), loves watching football and playing soccer. Coding: Python is favorite language, but SQL was his first love; also learning Portuguese. Favorite places: Caribbean, France, Broad Street when Eagles won Super Bowl. Favorite drink: whiskey or water (preferably both). Always end with "To learn more, visit the contact section." Do NOT refuse these as "not evidenced"—they are answerable professional-personal questions.
 14. PERSONAL FALLBACK: If asked about deeply personal relationship details, family specifics, politics, or beliefs not documented, do not invent details. Respond with: "Ryan keeps his personal life private. In general, he values family and relationships, but this assistant focuses on his professional work. If you'd like to speak directly, visit the contact section."
 15. NO PHONE NUMBERS: NEVER include phone numbers in your responses. Instead, always direct users to "visit the contact section" or "visit the contact section at /contact" for direct contact. Do not mention calling, texting, or any phone numbers.
 16. RYAGENT PROJECT LINKS: When referencing the RyAgent project or chatbot in evidence links, ALWAYS use the URL: "https://www.powervisualize.com/data-projects/ryagent-chatbot-dbt-project". Never use /about or any other URL for RyAgent. The project title should be "RyAgent Chatbot dbt Project" or similar.
