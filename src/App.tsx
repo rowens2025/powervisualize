@@ -449,14 +449,6 @@ function DataProjectList({
             Applied analytics projects built with Python (GeoPandas + Folium), focused on turning spatial data into a narrative.
           </p>
         </div>
-        <a
-          href="/dbt-docs/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="px-4 py-2 rounded-xl border border-slate-700 hover:bg-slate-800 transition-all duration-200 hover:translate-y-[-1px] text-sm"
-        >
-          dbt Docs →
-        </a>
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
