@@ -97,6 +97,12 @@ export default function App() {
       ],
     },
     {
+      id: 'lending-club-risk-console',
+      title: 'Financial Credit Risk Lab: LendingClub PD Risk Console',
+      // Thumbnail uses the first overview-style screenshot
+      preview: '/dataprojects/lending-club/01-default-pd.png',
+    },
+    {
       id: 'ryagent-chatbot-dbt-project',
       title: 'RyAgent Chatbot dbt Project',
       preview: '/dataprojects/dp2/pictures/ChatBot.png',
@@ -395,6 +401,13 @@ export default function App() {
               />
             ) : openDataProject === 'ryagent-chatbot-dbt-project' ? (
               <RyAgentProjectViewer
+                onBack={() => {
+                  setOpenDataProject(null);
+                  window.history.pushState({ route: 'data-projects' }, '', '/data-projects');
+                }}
+              />
+            ) : openDataProject === 'lending-club-risk-console' ? (
+              <LendingClubRiskConsoleViewer
                 onBack={() => {
                   setOpenDataProject(null);
                   window.history.pushState({ route: 'data-projects' }, '', '/data-projects');
@@ -846,6 +859,136 @@ function RyAgentProjectViewer({ onBack }: { onBack: () => void }) {
             >
               API Handler (GitHub)
             </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------------ */
+/* LendingClub Risk Console Project     */
+/* ------------------------------------ */
+
+function LendingClubRiskConsoleViewer({ onBack }: { onBack: () => void }) {
+  const containerWidth = 'w-full md:w-2/3 mx-auto';
+
+  return (
+    <section className="space-y-6">
+      <div className="flex items-center justify-between">
+        <button
+          onClick={onBack}
+          className="px-3 py-2 rounded-xl border border-slate-700 hover:bg-slate-800 transition-all duration-200 hover:translate-y-[-1px]"
+        >
+          Back
+        </button>
+        <h2 className="text-lg font-semibold ml-6">Financial Credit Risk Lab — LendingClub PD Risk Console</h2>
+        <div />
+      </div>
+
+      {/* High-level story */}
+      <div className={`${containerWidth} max-w-3xl`}>
+        <p className="text-slate-300 leading-relaxed">
+          This project turns LendingClub&apos;s historical loan performance into a small, opinionated <span className="font-semibold">credit risk lab</span>.
+          Using R and a logistic regression probability-of-default (PD) model, it simulates underwriting policy on a matured book of completed loans.
+          Instead of relying on headline default rates, the app looks at <span className="font-semibold">risk deciles</span> and realized cashflow economics
+          to answer a concrete business question: &quot;Where should we draw the line and stop approving loans?&quot;
+        </p>
+      </div>
+
+      {/* Hero image + key takeaway (overview-style screenshot) */}
+      <div className={`${containerWidth} rounded-3xl bg-slate-900/60 border border-slate-800 overflow-hidden`}>
+        <div className="px-5 py-4 border-b border-slate-800 flex flex-wrap gap-3 items-center justify-between">
+          <div>
+            <div className="font-medium">Portfolio & Risk Overview</div>
+            <div className="text-xs text-slate-400">
+              High-level snapshot of the LendingClub book under study, with defaults and profitability summarized for the completed-loans cohort.
+            </div>
+          </div>
+        </div>
+        <div className="bg-[#0b0f17]">
+          <img
+            src="/dataprojects/lending-club/01-default-pd.png"
+            alt="LendingClub portfolio overview and KPIs"
+            className="w-full h-auto block"
+            loading="lazy"
+          />
+        </div>
+        <div className="px-5 py-4 border-t border-slate-800 text-sm text-slate-300 space-y-2">
+          <p>
+            The PD model is trained on pre-2015 loans and evaluated on a 2016 holdout, so the policy simulation never &quot;peeks&quot; into the future.
+            Using the model&apos;s ranked risk deciles and realized economics, the console finds an optimal cutoff: <span className="font-semibold">decline roughly 47% of the riskiest loans</span>.
+          </p>
+          <p>
+            At that policy, the lender would keep about half the book but materially change its economics:
+            approximately <span className="font-semibold">$68M more total profit</span> on the holdout loans, while <span className="font-semibold">$540M in losses are avoided</span>.
+          </p>
+        </div>
+      </div>
+
+      {/* Explore views: Drivers + Model */}
+      <div className={`${containerWidth} grid gap-6 md:grid-cols-2`}>
+        <div className="rounded-3xl bg-slate-900/60 border border-slate-800 overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-800">
+            <div className="font-medium">Explore — Drivers</div>
+            <div className="text-xs text-slate-400">
+              Default rate by FICO band and loan purpose, framed as a risk driver console.
+            </div>
+          </div>
+          <div className="bg-[#0b0f17]">
+            <img
+              src="/dataprojects/lending-club/02-overview.png"
+              alt="LendingClub default drivers dashboard"
+              className="w-full h-auto block"
+              loading="lazy"
+            />
+          </div>
+          <div className="px-5 py-4 border-t border-slate-800 text-xs text-slate-300">
+            Built-in filters (issue month range, grade, term, purpose, FICO band) plus driver views make it easy to see which slices of the book carry most of the risk.
+          </div>
+        </div>
+
+        <div className="rounded-3xl bg-slate-900/60 border border-slate-800 overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-800">
+            <div className="font-medium">Default PD Model Results</div>
+            <div className="text-xs text-slate-400">
+              Logistic regression PD model trained on completed loans, evaluated out-of-time on a 2016 holdout cohort.
+            </div>
+          </div>
+          <div className="bg-[#0b0f17]">
+            <img
+              src="/dataprojects/lending-club/03-drivers.png"
+              alt="LendingClub PD model results dashboard"
+              className="w-full h-auto block"
+              loading="lazy"
+            />
+          </div>
+          <div className="px-5 py-4 border-t border-slate-800 text-xs text-slate-300">
+            This view shows how the model stratifies the portfolio into PD deciles and where defaults and profit concentrate.
+          </div>
+        </div>
+      </div>
+
+      {/* Try It / Policy tooling (fourth screenshot) */}
+      <div className={`${containerWidth} grid gap-6`}>
+        <div className="rounded-3xl bg-slate-900/60 border border-slate-800 overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-800">
+            <div className="font-medium">Try It — Loan Input & Policy Impact</div>
+            <div className="text-xs text-slate-400">
+              Sandbox where you plug in a hypothetical loan, see its PD/decile, and understand how the decline-top-X% policy would treat it.
+            </div>
+          </div>
+          <div className="bg-[#0b0f17]">
+            <img
+              src="/dataprojects/lending-club/04-policy.png"
+              alt="LendingClub try-it loan input and policy impact"
+              className="w-full h-auto block"
+              loading="lazy"
+            />
+          </div>
+          <div className="px-5 py-4 border-t border-slate-800 text-xs text-slate-300">
+            This closes the loop from analytics to decisioning: the same PD model used for back-testing powers an explainable, interactive tool
+            that shows where a single loan lands on the risk spectrum and how the chosen policy impacts approval.
           </div>
         </div>
       </div>

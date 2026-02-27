@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540">
+  <defs>
+    <linearGradient id="bg03" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#020617"/>
+      <stop offset="50%" stop-color="#0b1120"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="540" fill="url(#bg03)"/>
+  <rect x="40" y="40" width="880" height="64" rx="16" ry="16" fill="#020617" stroke="#1f2937"/>
+  <text x="64" y="78" fill="#e5e7eb" font-family="system-ui, -apple-system, BlinkMacSystemFont" font-size="20" font-weight="600">
+    Explore — Drivers
+  </text>
+  <text x="64" y="100" fill="#9ca3af" font-family="system-ui" font-size="12">
+    Default rate by FICO band and loan purpose
+  </text>
+
+  <!-- left bar chart -->
+  <rect x="56" y="128" width="472" height="320" rx="18" ry="18" fill="#020617" stroke="#1f2937"/>
+  <g transform="translate(92 172)">
+    <rect x="0" y="140" width="32" height="56" fill="#1f2937"/>
+    <rect x="60" y="112" width="32" height="84" fill="#1f2937"/>
+    <rect x="120" y="88" width="32" height="108" fill="#1f2937"/>
+    <rect x="180" y="64" width="32" height="132" fill="#1f2937"/>
+    <rect x="240" y="44" width="32" height="152" fill="#1f2937"/>
+    <rect x="300" y="32" width="32" height="164" fill="#1f2937"/>
+  </g>
+
+  <!-- right radar-ish shape -->
+  <rect x="552" y="128" width="368" height="320" rx="18" ry="18" fill="#020617" stroke="#1f2937"/>
+  <g transform="translate(736 288)">
+    <polygon points="0,-92 68,-40 60,40 0,92 -68,40 -60,-40"
+             fill="none" stroke="#38bdf8" stroke-width="2"/>
+    <polygon points="0,-64 48,-28 42,28 0,64 -48,28 -42,-28"
+             fill="#0f172a" stroke="#1f2937" stroke-width="1"/>
+  </g>
+</svg>
+

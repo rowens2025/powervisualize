@@ -50,16 +50,17 @@
     },
     {
       "id": "lending-club",
-      "title": "Lending Club Loan Data Analysis",
-      "type": "data-science",
-      "description": "R-based repository for loan data analysis with statistical modeling and data science workflows.",
+      "title": "LendingClub Financial Credit Risk Lab",
+      "type": "risk-analytics",
+      "description": "R-based credit risk console built on LendingClub loan performance data. Trains a logistic regression Probability of Default (PD) model on completed loans, then simulates underwriting policy on a 2016 holdout cohort to show how profit and losses change as you move the approval cutoff across PD deciles.",
       "repo_url": "https://github.com/rowens2025/lending-club-loan-data",
-      "stack": ["R", "Statistics", "Data Science"],
-      "skills_demonstrated": ["R", "Statistical Modeling"],
+      "stack": ["R", "Shiny", "tidyverse", "Data Science"],
+      "skills_demonstrated": ["R", "Statistical Modeling", "Credit Risk Analytics"],
       "proof_points": [
-        "R programming proficiency",
-        "Statistical analysis",
-        "Data science workflow"
+        "Logistic regression PD model trained on matured, completed loans",
+        "Policy simulation that declines ~47% of the riskiest loans while increasing profit by ~$68M on the holdout cohort",
+        "Loss-avoidance analysis showing ~$540M in losses avoided at the optimal cutoff",
+        "Interactive Shiny console with portfolio overview, driver analysis, PD model diagnostics, and a \"Try It\" loan input sandbox"
       ]
     }
   ]
