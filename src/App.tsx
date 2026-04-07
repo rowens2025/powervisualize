@@ -9,7 +9,14 @@ import type { ScenarioKPIs } from './components/flood-map/types';
 
 type Route = 'home' | 'about' | 'dashboards' | 'data-projects' | 'contact';
 
-type Report = { id: string; title: string; src: string; preview?: string };
+type Report = {
+  id: string;
+  title: string;
+  src: string;
+  preview?: string;
+  /** powerbi: append filterPane params. plain: use src as iframe URL (e.g. Vercel app). */
+  embed?: 'powerbi' | 'plain';
+};
 
 type DataProject = {
   id: string;
@@ -76,11 +83,22 @@ export default function App() {
       src: 'https://app.powerbi.com/view?r=eyJrIjoiNWRjNjEwYmUtODNkMS00MzI5LTk5M2YtYmE4MDkzNDhjMmNmIiwidCI6IjM2ZmE0ZWQ4LTEyMjMtNGQ4MC1iYjU4LWZhYjFkNzc2ZjNmZSIsImMiOjF9',
       preview: '/previews/steel.jpg',
     },
+    {
+      id: 'mortgage-marts',
+      title: 'Mortgage Portfolio Intelligence',
+      src: (import.meta.env.VITE_MORTGAGE_DASHBOARD_URL ?? '').replace(/\/$/, ''),
+      embed: 'plain',
+      preview: '/previews/fanniemae.png',
+    },
     { id: 'r7', title: 'Under Construction', src: '' },
   ];
 
-  // ✅ Your first data project (dp1)
   const dataProjects: DataProject[] = [
+    {
+      id: 'mortgage-performance-marts',
+      title: 'Mortgage Portfolio Intelligence',
+      preview: '/dataprojects/fanniemae/fanniemae.png',
+    },
     {
       id: 'dp1',
       title: 'NYC Flood Risk: Buildings vs Neighborhoods',
@@ -413,6 +431,13 @@ export default function App() {
                   window.history.pushState({ route: 'data-projects' }, '', '/data-projects');
                 }}
               />
+            ) : openDataProject === 'mortgage-performance-marts' ? (
+              <MortgageMartsProjectViewer
+                onBack={() => {
+                  setOpenDataProject(null);
+                  window.history.pushState({ route: 'data-projects' }, '', '/data-projects');
+                }}
+              />
             ) : (
               <DataProjectViewer
                 project={dataProjects.find((p) => p.id === openDataProject)!}
@@ -459,7 +484,7 @@ function DataProjectList({
         <div>
           <h2 className="text-2xl font-semibold">Data Projects</h2>
           <p className="text-slate-400 text-sm mt-2 max-w-3xl">
-            Applied analytics projects built with Python (GeoPandas + Folium), focused on turning spatial data into a narrative.
+            Applied analytics spanning geospatial Python (GeoPandas + Folium), credit-risk labs in R, analytics engineering with dbt + Postgres, and interactive React dashboards.
           </p>
         </div>
       </div>
@@ -997,6 +1022,72 @@ function LendingClubRiskConsoleViewer({ onBack }: { onBack: () => void }) {
 }
 
 /* ------------------------------------ */
+/* Mortgage performance marts (embed)   */
+/* ------------------------------------ */
+
+function MortgageMartsProjectViewer({ onBack }: { onBack: () => void }) {
+  const dashboardUrl = (import.meta.env.VITE_MORTGAGE_DASHBOARD_URL ?? '').replace(/\/$/, '');
+  const containerWidth = 'w-full md:w-2/3 mx-auto';
+
+  return (
+    <section className="space-y-6">
+      <div className="flex items-center justify-between">
+        <button
+          onClick={onBack}
+          className="px-3 py-2 rounded-xl border border-slate-700 hover:bg-slate-800 transition-all duration-200 hover:translate-y-[-1px]"
+        >
+          Back
+        </button>
+        <h2 className="text-lg font-semibold ml-6">Mortgage Portfolio Intelligence</h2>
+        <div />
+      </div>
+
+      <div className={`${containerWidth} max-w-3xl`}>
+        <p className="text-slate-300 leading-relaxed">
+          This project demonstrates an analytics-engineering pattern: loan performance lands in Postgres (Neon), is modeled with dbt into curated marts (KPI time series, roll-forward, vintage cohorts, delinquency bucket mix), and is explored through a React + Vite dashboard with statistical overlays (for example Wilson-style confidence bands) and cohort navigation—similar in spirit to how a GSE or bank might govern a monthly performance book.
+        </p>
+      </div>
+
+      {dashboardUrl ? (
+        <>
+          <div className="w-full rounded-2xl ring-1 ring-slate-800 overflow-hidden bg-[#0b0f17]">
+            <iframe
+              key={dashboardUrl}
+              title="Mortgage portfolio dashboard"
+              src={dashboardUrl}
+              className="block w-full"
+              style={{ height: '85vh', backgroundColor: '#0b0f17' }}
+              frameBorder={0}
+              allowFullScreen
+            />
+          </div>
+          <div className={`${containerWidth} max-w-3xl`}>
+            <a
+              href={dashboardUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-cyan-400 hover:text-cyan-300"
+            >
+              Open dashboard in a new tab →
+            </a>
+          </div>
+        </>
+      ) : (
+        <div
+          className={`${containerWidth} max-w-3xl rounded-2xl ring-1 ring-slate-800 p-8 text-slate-400 text-sm`}
+        >
+          <p className="mb-2">
+            Set <code className="text-slate-200">VITE_MORTGAGE_DASHBOARD_URL</code> in{' '}
+            <code className="text-slate-200">.env.local</code> (for example your local Vite dashboard origin or the deployed URL) to embed the live app here.
+          </p>
+          <p>The same variable powers the &quot;Mortgage Portfolio Intelligence&quot; tile under Dashboards.</p>
+        </div>
+      )}
+    </section>
+  );
+}
+
+/* ------------------------------------ */
 /* Home                                 */
 /* ------------------------------------ */
 
@@ -1350,7 +1441,20 @@ function DashboardList({
 /* Report Viewer                        */
 /* ------------------------------------ */
 
-function ReportViewer({ report, onBack }: { report: { title: string; src: string }; onBack: () => void }) {
+function ReportViewer({
+  report,
+  onBack,
+}: {
+  report: { title: string; src: string; embed?: 'powerbi' | 'plain' };
+  onBack: () => void;
+}) {
+  const iframeSrc =
+    report.embed === 'plain'
+      ? report.src
+      : report.src
+        ? `${report.src}${report.src.includes('?') ? '&' : '?'}filterPaneEnabled=false&navContentPaneEnabled=false`
+        : '';
+
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
@@ -1367,9 +1471,9 @@ function ReportViewer({ report, onBack }: { report: { title: string; src: string
       {report.src ? (
         <div className="w-full rounded-2xl ring-1 ring-slate-800 overflow-hidden bg-[#0b0f17]">
           <iframe
-            key={report.src}
+            key={iframeSrc}
             title={report.title}
-            src={`${report.src}&filterPaneEnabled=false&navContentPaneEnabled=false`}
+            src={iframeSrc}
             className="block w-full"
             style={{ height: '85vh', backgroundColor: '#0b0f17' }}
             frameBorder={0}

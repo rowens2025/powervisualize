@@ -48,3 +48,6 @@ public/dataprojects/**/*.xls
 dbt/**/target/
 dbt/**/dbt_packages/
 dbt/**/logs/
+
+# Local dbt credentials (use dbt/profiles.yml.example as template)
+dbt/profiles.yml

@@ -54,13 +54,34 @@
       "type": "risk-analytics",
       "description": "R-based credit risk console built on LendingClub loan performance data. Trains a logistic regression Probability of Default (PD) model on completed loans, then simulates underwriting policy on a 2016 holdout cohort to show how profit and losses change as you move the approval cutoff across PD deciles.",
       "repo_url": "https://github.com/rowens2025/lending-club-loan-data",
+      "live_url": "https://www.powervisualize.com/data-projects/financial-credit-risk-lab-lendingclub-pd-risk-console",
       "stack": ["R", "Shiny", "tidyverse", "Data Science"],
-      "skills_demonstrated": ["R", "Statistical Modeling", "Credit Risk Analytics"],
+      "skills_demonstrated": ["R", "Statistical Modeling", "Credit Risk Analytics", "Financial & portfolio analytics"],
       "proof_points": [
         "Logistic regression PD model trained on matured, completed loans",
         "Policy simulation that declines ~47% of the riskiest loans while increasing profit by ~$68M on the holdout cohort",
         "Loss-avoidance analysis showing ~$540M in losses avoided at the optimal cutoff",
         "Interactive Shiny console with portfolio overview, driver analysis, PD model diagnostics, and a \"Try It\" loan input sandbox"
+      ]
+    },
+    {
+      "id": "mortgage-performance-marts",
+      "title": "Mortgage Portfolio Intelligence",
+      "type": "analytics-engineering",
+      "description": "Analytics engineering stack for a mortgage-style monthly performance book: data lands in Postgres (Neon), is modeled with dbt into marts (KPI long-form series, roll-forward, vintage cohorts, delinquency bucket mix), and is consumed by a React + Vite single-page dashboard with statistical overlays and cohort navigation.",
+      "live_url": "https://www.powervisualize.com/data-projects/mortgage-portfolio-intelligence",
+      "stack": ["dbt", "PostgreSQL", "Neon", "React", "TypeScript", "Vite", "Tailwind CSS"],
+      "skills_demonstrated": [
+        "dbt (Analytics Engineering)",
+        "PostgreSQL",
+        "React",
+        "Data Modeling",
+        "Financial & portfolio analytics"
+      ],
+      "proof_points": [
+        "Layered SQL transforms with tests and documentation suitable for a governed mart",
+        "Dashboard surfaces aligned to portfolio monitoring: KPI significance, roll dynamics, vintage curves, and bucket mix",
+        "Same live app can be embedded from Data Projects and opened full-screen when VITE_MORTGAGE_DASHBOARD_URL is configured"
       ]
     }
   ]

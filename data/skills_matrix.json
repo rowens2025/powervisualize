@@ -243,6 +243,16 @@
           ],
           "stack": ["React", "Vite", "Tailwind CSS"],
           "tags": ["portfolio", "frontend"]
+        },
+        {
+          "type": "project_page",
+          "title": "Mortgage Portfolio Intelligence",
+          "url": "https://www.powervisualize.com/data-projects/mortgage-portfolio-intelligence",
+          "proof_points": [
+            "React + Vite dashboard over Postgres marts: KPIs, cohorts, roll-forward, and statistical overlays"
+          ],
+          "stack": ["React", "TypeScript", "Vite", "Tailwind CSS"],
+          "tags": ["dashboards", "frontend"]
         }
       ]
     },
@@ -263,6 +273,17 @@
           ],
           "stack": ["R", "Statistics", "Data Science"],
           "tags": ["statistics", "modeling"]
+        },
+        {
+          "type": "project_page",
+          "title": "Financial Credit Risk Lab — LendingClub PD Risk Console",
+          "url": "https://www.powervisualize.com/data-projects/financial-credit-risk-lab-lendingclub-pd-risk-console",
+          "proof_points": [
+            "Shiny console with PD deciles, policy simulation, and try-it sandbox on a real historical book",
+            "Out-of-time evaluation and loss-avoidance framing tied to underwriting cutoffs"
+          ],
+          "stack": ["R", "Shiny", "Credit Risk"],
+          "tags": ["lending", "risk"]
         }
       ]
     },
@@ -295,6 +316,111 @@
           ],
           "stack": ["Python", "GeoPandas", "React", "PMTiles"],
           "tags": ["geospatial", "visualization"]
+        }
+      ]
+    },
+    {
+      "skill": "dbt (Analytics Engineering)",
+      "aliases": ["dbt", "dbt Core", "data build tool", "analytics engineering", "SQL transforms"],
+      "confidence": "strong",
+      "summary": "Models raw portfolio and loan-adjacent data in Postgres with dbt: staging → intermediate → marts, tests, and generated documentation for auditable pipelines.",
+      "proof": [
+        {
+          "type": "project_page",
+          "title": "RyAgent Chatbot dbt Project",
+          "url": "https://www.powervisualize.com/data-projects/ryagent-chatbot-dbt-project",
+          "proof_points": [
+            "Layered dbt project with staging, dimensions, and marts consumed by the portfolio assistant",
+            "Hosted dbt Docs and lineage for end-to-end traceability"
+          ],
+          "stack": ["dbt", "PostgreSQL", "Neon"],
+          "tags": ["analytics-engineering", "documentation"]
+        },
+        {
+          "type": "repo",
+          "title": "RyAgent dbt models (PowerVisualize)",
+          "url": "https://github.com/rowens2025/powervisualize/tree/main/dbt/ryagent_warehouse/models",
+          "proof_points": [
+            "Version-controlled SQL models, YAML contracts, and tests in a real repo"
+          ],
+          "stack": ["dbt", "SQL", "Git"],
+          "tags": ["ci", "testing"]
+        },
+        {
+          "type": "project_page",
+          "title": "Mortgage Portfolio Intelligence",
+          "url": "https://www.powervisualize.com/data-projects/mortgage-portfolio-intelligence",
+          "proof_points": [
+            "Marts pattern for monthly KPIs, roll-forward, vintage cohorts, and bucket mix consumed by a React dashboard"
+          ],
+          "stack": ["dbt", "PostgreSQL", "Neon", "React"],
+          "tags": ["mortgage", "dashboards"]
+        }
+      ]
+    },
+    {
+      "skill": "PostgreSQL",
+      "aliases": ["Postgres", "Neon", "relational SQL", "analytical SQL"],
+      "confidence": "strong",
+      "summary": "Designs and queries analytical schemas in Postgres (including Neon) for dashboards and dbt pipelines, with attention to grain, keys, and performance-friendly aggregates.",
+      "proof": [
+        {
+          "type": "project_page",
+          "title": "RyAgent Chatbot dbt Project",
+          "url": "https://www.powervisualize.com/data-projects/ryagent-chatbot-dbt-project",
+          "proof_points": [
+            "Neon Postgres as source of truth for assistant-facing marts"
+          ],
+          "stack": ["PostgreSQL", "Neon", "dbt"],
+          "tags": ["database", "cloud"]
+        },
+        {
+          "type": "project_page",
+          "title": "Mortgage Portfolio Intelligence",
+          "url": "https://www.powervisualize.com/data-projects/mortgage-portfolio-intelligence",
+          "proof_points": [
+            "Dashboard reads curated marts over a managed Postgres instance"
+          ],
+          "stack": ["PostgreSQL", "Neon", "React"],
+          "tags": ["mortgage", "reporting"]
+        }
+      ]
+    },
+    {
+      "skill": "Financial & portfolio analytics",
+      "aliases": ["credit risk", "portfolio reporting", "loan performance", "KPI reporting"],
+      "confidence": "strong",
+      "summary": "Builds interpretable portfolio views—decile-based credit policy, monthly performance books, and cohort-style exploration—backed by SQL marts and interactive UIs.",
+      "proof": [
+        {
+          "type": "project_page",
+          "title": "Financial Credit Risk Lab — LendingClub PD Risk Console",
+          "url": "https://www.powervisualize.com/data-projects/financial-credit-risk-lab-lendingclub-pd-risk-console",
+          "proof_points": [
+            "PD model, decile policy simulation, and economics narrative on a historical unsecured book"
+          ],
+          "stack": ["R", "Shiny", "Statistics"],
+          "tags": ["credit-risk", "policy"]
+        },
+        {
+          "type": "project_page",
+          "title": "Mortgage Portfolio Intelligence",
+          "url": "https://www.powervisualize.com/data-projects/mortgage-portfolio-intelligence",
+          "proof_points": [
+            "Mortgage-style performance marts with roll-forward, vintage views, and delinquency bucket mix in a React dashboard"
+          ],
+          "stack": ["SQL", "dbt", "React"],
+          "tags": ["mortgage", "performance"]
+        },
+        {
+          "type": "repo",
+          "title": "Lending Club Loan Data Analysis",
+          "url": "https://github.com/rowens2025/lending-club-loan-data",
+          "proof_points": [
+            "Open R workflow on public loan performance data"
+          ],
+          "stack": ["R", "Data Science"],
+          "tags": ["lending", "open-data"]
         }
       ]
     },

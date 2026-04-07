@@ -77,7 +77,9 @@
         "Established Power BI CI/CD workflows using PBIP + Azure DevOps pipelines",
         "Developed A/B testing pipelines producing Power BI-friendly outputs with frequentist and Bayesian metrics",
         "Built geospatial analytics projects merging multiple spatial datasets using Python (GeoPandas + Folium)",
-        "Created production-ready React + Vite + Tailwind portfolio site demonstrating full-stack capability"
+        "Created production-ready React + Vite + Tailwind portfolio site demonstrating full-stack capability",
+        "Designed and implemented a multi-tier medallion data pipeline (Silver / Gold / Comparison / Presentation) supporting analytics for ~170 financial institutions, processing multi-source collections data into benchmarkable performance metrics across 10+ operational categories.",
+        "Built distributed PySpark data processing pipelines in a cloud data lake environment (Azure Synapse + ADLS Gen2), standardizing ingestion patterns, dynamic partitioning, and component-based metric modeling to enable accurate time-series aggregation and scalable parallel processing across hundreds of client datasets."
       ],
       "technologies": [
         "Power BI",
