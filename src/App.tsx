@@ -286,6 +286,10 @@ export default function App() {
 
   const isFloodDashboard = route === 'data-projects' && openDashboard && openDataProject === 'dp1';
   const isDataProject1 = route === 'data-projects' && openDataProject === 'dp1';
+  const isFullWidthMain =
+    isFloodDashboard ||
+    (route === 'data-projects' && openDataProject === 'mortgage-performance-marts') ||
+    (route === 'dashboards' && openReport === 'mortgage-marts');
   const [headerHovered, setHeaderHovered] = useState(false);
 
   return (
@@ -386,7 +390,11 @@ export default function App() {
         </header>
       </div>
 
-      <main className={`${isFloodDashboard ? 'w-full' : 'max-w-6xl'} mx-auto ${isFloodDashboard ? 'px-4 py-0' : 'px-4 pt-20 pb-10'}`}>
+      <main
+        className={`${isFullWidthMain ? 'w-full' : 'max-w-6xl'} mx-auto ${
+          isFullWidthMain ? 'px-2 sm:px-4 py-0 pb-6' : 'px-4 pt-20 pb-10'
+        }`}
+      >
         {route === 'home' && <Home setRoute={go} setOpenDataProject={openDataProjectWithUrl} />}
 
         {route === 'about' && <About />}
@@ -1027,55 +1035,63 @@ function LendingClubRiskConsoleViewer({ onBack }: { onBack: () => void }) {
 
 function MortgageMartsProjectViewer({ onBack }: { onBack: () => void }) {
   const dashboardUrl = (import.meta.env.VITE_MORTGAGE_DASHBOARD_URL ?? '').replace(/\/$/, '');
-  const containerWidth = 'w-full md:w-2/3 mx-auto';
+  const introMax = 'max-w-3xl mx-auto px-1';
 
   return (
-    <section className="space-y-6">
-      <div className="flex items-center justify-between">
-        <button
-          onClick={onBack}
-          className="px-3 py-2 rounded-xl border border-slate-700 hover:bg-slate-800 transition-all duration-200 hover:translate-y-[-1px]"
-        >
-          Back
-        </button>
-        <h2 className="text-lg font-semibold ml-6">Mortgage Portfolio Intelligence</h2>
-        <div />
+    <section className="space-y-4 pt-14 sm:pt-16">
+      <div className="flex flex-wrap items-center gap-3 justify-between px-1">
+        <div className="flex flex-wrap items-center gap-3 min-w-0">
+          <button
+            onClick={onBack}
+            className="shrink-0 px-3 py-2 rounded-xl border border-slate-700 hover:bg-slate-800 transition-all duration-200 hover:translate-y-[-1px]"
+          >
+            Back
+          </button>
+          <h2 className="text-lg font-semibold truncate">Mortgage Portfolio Intelligence</h2>
+        </div>
       </div>
 
-      <div className={`${containerWidth} max-w-3xl`}>
-        <p className="text-slate-300 leading-relaxed">
+      <div className={introMax}>
+        <p className="text-slate-300 leading-relaxed text-sm sm:text-base">
           This project demonstrates an analytics-engineering pattern: loan performance lands in Postgres (Neon), is modeled with dbt into curated marts (KPI time series, roll-forward, vintage cohorts, delinquency bucket mix), and is explored through a React + Vite dashboard with statistical overlays (for example Wilson-style confidence bands) and cohort navigation—similar in spirit to how a GSE or bank might govern a monthly performance book.
         </p>
       </div>
 
       {dashboardUrl ? (
         <>
-          <div className="w-full rounded-2xl ring-1 ring-slate-800 overflow-hidden bg-[#0b0f17]">
-            <iframe
-              key={dashboardUrl}
-              title="Mortgage portfolio dashboard"
-              src={dashboardUrl}
-              className="block w-full"
-              style={{ height: '85vh', backgroundColor: '#0b0f17' }}
-              frameBorder={0}
-              allowFullScreen
-            />
-          </div>
-          <div className={`${containerWidth} max-w-3xl`}>
+          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3 px-1">
+            <p className="text-xs text-slate-500 sm:max-w-md">
+              Embedded view uses the full width below. Use a new tab if the layout feels tight or you want the native app chrome.
+            </p>
             <a
               href={dashboardUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-cyan-400 hover:text-cyan-300"
+              className="shrink-0 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-cyan-400 to-fuchsia-500 text-slate-900 shadow-lg shadow-cyan-900/20 hover:opacity-95 transition-opacity"
             >
-              Open dashboard in a new tab →
+              Open dashboard in new tab
+              <span aria-hidden>↗</span>
             </a>
+          </div>
+
+          <div className="w-full min-w-0 rounded-xl ring-1 ring-slate-800 bg-[#0b0f17] shadow-xl shadow-black/40">
+            <iframe
+              key={dashboardUrl}
+              title="Mortgage portfolio dashboard"
+              src={dashboardUrl}
+              className="block w-full min-w-0"
+              style={{
+                height: 'min(92vh, 1200px)',
+                minHeight: '70vh',
+                backgroundColor: '#0b0f17',
+              }}
+              frameBorder={0}
+              allowFullScreen
+            />
           </div>
         </>
       ) : (
-        <div
-          className={`${containerWidth} max-w-3xl rounded-2xl ring-1 ring-slate-800 p-8 text-slate-400 text-sm`}
-        >
+        <div className={`${introMax} rounded-2xl ring-1 ring-slate-800 p-8 text-slate-400 text-sm`}>
           <p className="mb-2">
             Set <code className="text-slate-200">VITE_MORTGAGE_DASHBOARD_URL</code> in{' '}
             <code className="text-slate-200">.env.local</code> (for example your local Vite dashboard origin or the deployed URL) to embed the live app here.
@@ -1455,9 +1471,11 @@ function ReportViewer({
         ? `${report.src}${report.src.includes('?') ? '&' : '?'}filterPaneEnabled=false&navContentPaneEnabled=false`
         : '';
 
+  const showNewTabCta = Boolean(report.embed === 'plain' && report.src);
+
   return (
-    <section>
-      <div className="flex items-center justify-between mb-4">
+    <section className={showNewTabCta ? 'pt-14 sm:pt-16 space-y-4' : ''}>
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <button
           onClick={onBack}
           className="px-3 py-2 rounded-xl border border-slate-700 hover:bg-slate-800 transition-all duration-200 hover:translate-y-[-1px]"
@@ -1469,17 +1487,40 @@ function ReportViewer({
       </div>
 
       {report.src ? (
-        <div className="w-full rounded-2xl ring-1 ring-slate-800 overflow-hidden bg-[#0b0f17]">
-          <iframe
-            key={iframeSrc}
-            title={report.title}
-            src={iframeSrc}
-            className="block w-full"
-            style={{ height: '85vh', backgroundColor: '#0b0f17' }}
-            frameBorder={0}
-            allowFullScreen
-          />
-        </div>
+        <>
+          {showNewTabCta && (
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 mb-1">
+              <a
+                href={report.src}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-cyan-400 to-fuchsia-500 text-slate-900 shadow-lg shadow-cyan-900/20 hover:opacity-95 transition-opacity w-full sm:w-auto"
+              >
+                Open dashboard in new tab
+                <span aria-hidden>↗</span>
+              </a>
+            </div>
+          )}
+          <div className="w-full min-w-0 rounded-xl ring-1 ring-slate-800 bg-[#0b0f17] shadow-xl shadow-black/40">
+            <iframe
+              key={iframeSrc}
+              title={report.title}
+              src={iframeSrc}
+              className="block w-full min-w-0"
+              style={
+                showNewTabCta
+                  ? {
+                      height: 'min(92vh, 1200px)',
+                      minHeight: '70vh',
+                      backgroundColor: '#0b0f17',
+                    }
+                  : { height: '85vh', backgroundColor: '#0b0f17' }
+              }
+              frameBorder={0}
+              allowFullScreen
+            />
+          </div>
+        </>
       ) : (
         <div className="w-full rounded-2xl ring-1 ring-slate-800 grid place-items-center text-slate-400" style={{ height: '75vh' }}>
           Add your report embed URL to <code>reports</code> in App.tsx
