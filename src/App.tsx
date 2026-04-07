@@ -285,7 +285,10 @@ export default function App() {
   }, []);
 
   const isFloodDashboard = route === 'data-projects' && openDashboard && openDataProject === 'dp1';
-  const isDataProject1 = route === 'data-projects' && openDataProject === 'dp1';
+  /** NYC Flood (dp1) + Mortgage Portfolio Intelligence: slim peek header for immersive views */
+  const isPeekHeaderDataProject =
+    route === 'data-projects' &&
+    (openDataProject === 'dp1' || openDataProject === 'mortgage-performance-marts');
   const isFullWidthMain =
     isFloodDashboard ||
     (route === 'data-projects' && openDataProject === 'mortgage-performance-marts') ||
@@ -297,29 +300,29 @@ export default function App() {
       {/* ===== Header ===== */}
       <div 
         className={`fixed top-0 left-0 right-0 z-40 transition-transform duration-300 ease-in-out ${
-          isDataProject1 
+          isPeekHeaderDataProject 
             ? headerHovered 
               ? 'translate-y-0' 
               : '-translate-y-[calc(100%-8px)]'
             : 'translate-y-0'
         }`}
-        style={{ paddingBottom: isDataProject1 && !headerHovered ? '0' : '0' }}
+        style={{ paddingBottom: isPeekHeaderDataProject && !headerHovered ? '0' : '0' }}
       >
         <div 
           className="bg-slate-700/50 w-full cursor-pointer hover:bg-slate-600/60 transition-colors relative z-50" 
           style={{ height: '8px' }}
-          onMouseEnter={() => isDataProject1 && setHeaderHovered(true)}
+          onMouseEnter={() => isPeekHeaderDataProject && setHeaderHovered(true)}
         />
         <div 
           className="absolute top-0 left-0 right-0 pointer-events-auto z-40"
           style={{ height: '128px', top: '-128px' }}
-          onMouseEnter={() => isDataProject1 && setHeaderHovered(true)}
+          onMouseEnter={() => isPeekHeaderDataProject && setHeaderHovered(true)}
         />
         <header 
           className="backdrop-blur supports-[backdrop-filter]:bg-slate-900/60 bg-slate-900/80 border-b border-slate-800" 
           style={{ marginTop: 0 }}
-          onMouseEnter={() => isDataProject1 && setHeaderHovered(true)}
-          onMouseLeave={() => isDataProject1 && setHeaderHovered(false)}
+          onMouseEnter={() => isPeekHeaderDataProject && setHeaderHovered(true)}
+          onMouseLeave={() => isPeekHeaderDataProject && setHeaderHovered(false)}
         >
         <div className="max-w-6xl mx-auto px-4">
           <div className="h-14 flex items-center justify-between">
@@ -1038,7 +1041,7 @@ function MortgageMartsProjectViewer({ onBack }: { onBack: () => void }) {
   const introMax = 'max-w-3xl mx-auto px-1';
 
   return (
-    <section className="space-y-4 pt-14 sm:pt-16">
+    <section className="space-y-4 pt-7">
       <div className="flex flex-wrap items-center gap-3 justify-between px-1">
         <div className="flex flex-wrap items-center gap-3 min-w-0">
           <button
