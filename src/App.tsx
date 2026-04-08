@@ -1332,6 +1332,8 @@ function TechBadges() {
     'Data Engineering',
     'Data Modeling',
     'ETL / ELT',
+    'dbt',
+    'Airflow',
     'Machine Learning',
     'MLOps',
     'Power BI',
