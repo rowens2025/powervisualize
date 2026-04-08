@@ -1033,6 +1033,139 @@ function LendingClubRiskConsoleViewer({ onBack }: { onBack: () => void }) {
 }
 
 /* ------------------------------------ */
+/* Mortgage: schema & lineage (below embed) */
+/* ------------------------------------ */
+
+function MortgageWarehouseDocsBelowDashboard({ dashboardUrl }: { dashboardUrl: string }) {
+  const [isDbtDocsExpanded, setIsDbtDocsExpanded] = useState(false);
+  const erdEmbedUrl = (import.meta.env.VITE_MORTGAGE_ERD_URL ?? '').trim();
+  const base = dashboardUrl.replace(/\/$/, '');
+  const dbtDocsUrl = base ? `${base}/dbt-docs/` : '';
+  const containerWidth = 'w-full md:w-2/3 mx-auto';
+
+  if (!erdEmbedUrl && !dbtDocsUrl) {
+    return (
+      <div className={`${containerWidth} max-w-3xl rounded-2xl ring-1 ring-slate-800 p-6 text-slate-400 text-sm`}>
+        <p className="mb-0">
+          Optional: set <code className="text-slate-200">VITE_MORTGAGE_ERD_URL</code> to your dbdiagram embed URL for the warehouse ERD. When{' '}
+          <code className="text-slate-200">VITE_MORTGAGE_DASHBOARD_URL</code> is set, dbt Docs load from{' '}
+          <code className="text-slate-200">…/dbt-docs/</code> on that deployment (run <code className="text-slate-200">npm run docs:sync</code> on the
+          dashboard repo before build).
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${containerWidth} max-w-3xl rounded-3xl bg-slate-900/60 border border-slate-800 overflow-hidden mt-8`}>
+      <div className="px-6 py-5 border-b border-slate-800">
+        <h3 className="text-xl font-semibold">Schema &amp; Lineage</h3>
+        <p className="text-slate-400 text-sm mt-2 max-w-2xl">
+          Warehouse ERD and generated dbt documentation—same layout as the RyAgent project page.
+        </p>
+      </div>
+      <div className="px-6 py-5 space-y-6">
+        {erdEmbedUrl ? (
+          <div>
+            <h4 className="font-medium mb-3">Warehouse ERD</h4>
+            <div className="rounded-lg overflow-hidden border border-slate-700 bg-slate-950">
+              <iframe
+                title="Mortgage warehouse ERD"
+                src={erdEmbedUrl}
+                className="w-full"
+                style={{ height: '700px', border: 'none' }}
+                loading="lazy"
+                allowFullScreen
+              />
+            </div>
+            <a
+              href={erdEmbedUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-block text-xs text-slate-400 hover:text-cyan-400 transition-colors"
+            >
+              Open in new tab →
+            </a>
+          </div>
+        ) : null}
+
+        {dbtDocsUrl ? (
+          <div>
+            <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+              <h4 className="font-medium">dbt Docs graph &amp; lineage</h4>
+              <button
+                type="button"
+                onClick={() => setIsDbtDocsExpanded(!isDbtDocsExpanded)}
+                className="px-3 py-1.5 text-xs rounded-lg border border-slate-600 hover:border-slate-500 bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 hover:text-white transition-all duration-200 flex items-center gap-1.5"
+                aria-label={isDbtDocsExpanded ? 'Collapse dbt docs' : 'Expand dbt docs'}
+              >
+                {isDbtDocsExpanded ? (
+                  <>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    </svg>
+                    Collapse
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                    Expand
+                  </>
+                )}
+              </button>
+            </div>
+            {isDbtDocsExpanded && (
+              <div
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                onClick={() => setIsDbtDocsExpanded(false)}
+                aria-hidden="true"
+              />
+            )}
+            <div
+              className={`w-full overflow-hidden rounded-2xl border border-slate-700 bg-white transition-all duration-300 ${isDbtDocsExpanded ? 'fixed inset-4 z-50 shadow-2xl' : 'relative'}`}
+            >
+              {isDbtDocsExpanded && (
+                <div className="absolute top-4 right-4 z-10">
+                  <button
+                    type="button"
+                    onClick={() => setIsDbtDocsExpanded(false)}
+                    className="p-2 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-white transition-colors"
+                    aria-label="Close expanded view"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+              <iframe
+                title="Mortgage warehouse dbt documentation"
+                src={dbtDocsUrl}
+                className={`block w-full bg-white transition-all duration-300 ${isDbtDocsExpanded ? 'h-[calc(100vh-8rem)]' : 'h-[75vh] sm:h-[80vh] min-h-[700px]'}`}
+                style={{ border: 'none' }}
+                loading="lazy"
+                allowFullScreen
+                referrerPolicy="no-referrer"
+              />
+            </div>
+            <a
+              href={dbtDocsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-block text-xs text-slate-400 hover:text-cyan-400 transition-colors"
+            >
+              Open in new tab →
+            </a>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------ */
 /* Mortgage performance marts (embed)   */
 /* ------------------------------------ */
 
@@ -1099,6 +1232,7 @@ function MortgageMartsProjectViewer({ onBack }: { onBack: () => void }) {
           <p>The same variable powers the &quot;Mortgage Portfolio Intelligence&quot; tile under Dashboards.</p>
         </div>
       )}
+      <MortgageWarehouseDocsBelowDashboard dashboardUrl={dashboardUrl} />
     </section>
   );
 }
@@ -1461,7 +1595,7 @@ function ReportViewer({
   report,
   onBack,
 }: {
-  report: { title: string; src: string; embed?: 'powerbi' | 'plain' };
+  report: Report;
   onBack: () => void;
 }) {
   const iframeSrc =
@@ -1526,6 +1660,9 @@ function ReportViewer({
           Add your report embed URL to <code>reports</code> in App.tsx
         </div>
       )}
+      {report.id === 'mortgage-marts' ? (
+        <MortgageWarehouseDocsBelowDashboard dashboardUrl={report.src} />
+      ) : null}
     </section>
   );
 }
