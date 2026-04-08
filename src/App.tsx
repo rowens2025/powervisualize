@@ -1062,10 +1062,7 @@ function MortgageMartsProjectViewer({ onBack }: { onBack: () => void }) {
 
       {dashboardUrl ? (
         <>
-          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3 px-1">
-            <p className="text-xs text-slate-500 sm:max-w-md">
-              Embedded view uses the full width below. Use a new tab if the layout feels tight or you want the native app chrome.
-            </p>
+          <div className="flex justify-end px-1">
             <a
               href={dashboardUrl}
               target="_blank"
