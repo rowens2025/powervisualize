@@ -7,7 +7,7 @@
  * + chartType. Add a MetricDef to expose a new chart — nothing else changes.
  */
 
-export type ChartType = 'line' | 'bar' | 'pie';
+export type ChartType = 'line' | 'area' | 'bar' | 'horizontalBar' | 'pie';
 
 export type MetricKind = 'trend' | 'breakdown';
 
@@ -42,7 +42,7 @@ export const MORTGAGE_METRICS: MortgageMetric[] = [
     categoryLabel: 'Month',
     measureLabel: 'Delinquency rate',
     unit: '%',
-    chartTypes: ['line', 'bar'],
+    chartTypes: ['line', 'area', 'bar'],
     defaultChart: 'line',
     example: 'Show the 30+ day delinquency rate trend',
     usesLimit: false,
@@ -57,7 +57,7 @@ export const MORTGAGE_METRICS: MortgageMetric[] = [
     categoryLabel: 'Month',
     measureLabel: 'Delinquent UPB rate',
     unit: '%',
-    chartTypes: ['line', 'bar'],
+    chartTypes: ['line', 'area', 'bar'],
     defaultChart: 'line',
     example: 'Delinquency rate weighted by balance over time',
     usesLimit: false,
@@ -72,7 +72,7 @@ export const MORTGAGE_METRICS: MortgageMetric[] = [
     categoryLabel: 'Month',
     measureLabel: 'Active loans',
     unit: '',
-    chartTypes: ['line', 'bar'],
+    chartTypes: ['line', 'area', 'bar'],
     defaultChart: 'line',
     example: 'How has the active loan count changed over time?',
     usesLimit: false,
@@ -87,7 +87,7 @@ export const MORTGAGE_METRICS: MortgageMetric[] = [
     categoryLabel: 'Month',
     measureLabel: 'Active UPB',
     unit: '$B',
-    chartTypes: ['line', 'bar'],
+    chartTypes: ['line', 'area', 'bar'],
     defaultChart: 'line',
     example: 'Show total active UPB over time',
     usesLimit: false,
@@ -102,7 +102,7 @@ export const MORTGAGE_METRICS: MortgageMetric[] = [
     categoryLabel: 'Month',
     measureLabel: 'Delinquent loans (30+)',
     unit: '',
-    chartTypes: ['line', 'bar'],
+    chartTypes: ['line', 'area', 'bar'],
     defaultChart: 'line',
     example: 'Trend of loans that are 30+ days delinquent',
     usesLimit: false,
@@ -119,7 +119,7 @@ export const MORTGAGE_METRICS: MortgageMetric[] = [
     categoryLabel: 'Delinquency bucket',
     measureLabel: 'Loans',
     unit: '',
-    chartTypes: ['bar', 'pie'],
+    chartTypes: ['bar', 'horizontalBar', 'pie'],
     defaultChart: 'bar',
     example: 'Break down the portfolio by delinquency status',
     usesLimit: false,
@@ -137,7 +137,7 @@ export const MORTGAGE_METRICS: MortgageMetric[] = [
     categoryLabel: 'Delinquency bucket',
     measureLabel: 'UPB',
     unit: '$B',
-    chartTypes: ['bar', 'pie'],
+    chartTypes: ['bar', 'horizontalBar', 'pie'],
     defaultChart: 'bar',
     example: 'Show unpaid balance by delinquency bucket',
     usesLimit: false,
@@ -155,7 +155,7 @@ export const MORTGAGE_METRICS: MortgageMetric[] = [
     categoryLabel: 'Vintage year',
     measureLabel: 'Delinquency rate',
     unit: '%',
-    chartTypes: ['bar', 'line'],
+    chartTypes: ['bar', 'horizontalBar', 'line'],
     defaultChart: 'bar',
     example: 'Which vintage years have the highest delinquency?',
     usesLimit: false,
@@ -176,7 +176,7 @@ export const MORTGAGE_METRICS: MortgageMetric[] = [
     categoryLabel: 'State',
     measureLabel: 'Loans',
     unit: '',
-    chartTypes: ['bar'],
+    chartTypes: ['bar', 'horizontalBar'],
     defaultChart: 'bar',
     example: 'Which states have the most loans?',
     usesLimit: true,
@@ -192,7 +192,7 @@ export const MORTGAGE_METRICS: MortgageMetric[] = [
     categoryLabel: 'Loan purpose',
     measureLabel: 'Loans',
     unit: '',
-    chartTypes: ['pie', 'bar'],
+    chartTypes: ['pie', 'bar', 'horizontalBar'],
     defaultChart: 'pie',
     example: 'Break down loans by purpose',
     usesLimit: false,
@@ -214,7 +214,7 @@ export const MORTGAGE_METRICS: MortgageMetric[] = [
     categoryLabel: 'Origination year',
     measureLabel: 'Avg credit score',
     unit: '',
-    chartTypes: ['line', 'bar'],
+    chartTypes: ['line', 'area', 'bar'],
     defaultChart: 'line',
     example: 'How does average credit score vary by origination year?',
     usesLimit: false,
@@ -237,7 +237,7 @@ type MetricRefinement = { hint?: string; followUps: string[] };
 
 const METRIC_REFINEMENTS: Record<string, MetricRefinement> = {
   delinquency_rate_30_plus_trend: {
-    followUps: ['Draw it as a bar chart', 'Break delinquency down by vintage year instead', 'Weight the delinquency rate by loan balance (UPB) instead'],
+    followUps: ['Draw it as a filled area chart', 'Break delinquency down by vintage year instead', 'Weight the delinquency rate by loan balance (UPB) instead'],
   },
   delinquency_upb_rate_trend: {
     followUps: ['Draw it as a bar chart', 'Compare it to the loan-count delinquency rate'],
@@ -246,7 +246,7 @@ const METRIC_REFINEMENTS: Record<string, MetricRefinement> = {
     followUps: ['Draw it as a bar chart', 'Show active UPB over time instead', 'Show the 30+ delinquent loan count instead'],
   },
   active_upb_trend: {
-    followUps: ['Draw it as a bar chart', 'Show the active loan count over time instead'],
+    followUps: ['Draw it as a filled area chart', 'Show the active loan count over time instead'],
   },
   delinq_loan_count_trend: {
     followUps: ['Draw it as a bar chart', 'Show the delinquency rate instead of the raw count'],
@@ -273,8 +273,8 @@ const METRIC_REFINEMENTS: Record<string, MetricRefinement> = {
     followUps: ['Show only the 5 worst vintage years', 'Sort vintages from highest delinquency to lowest', 'Draw it as a line chart'],
   },
   loans_by_state: {
-    hint: 'This shows the largest states — narrow or widen the field:',
-    followUps: ['Just the top 5 states', 'Show the top 15 states', 'Sort states from most to fewest loans'],
+    hint: 'This shows the largest states — narrow it, widen it, or flip the layout:',
+    followUps: ['Just the top 5 states', 'Show the top 15 states', 'Show it as a horizontal bar chart'],
   },
   loans_by_purpose: {
     followUps: ['Draw it as a bar chart', 'Drop the smallest purpose category', 'Sort purposes from largest to smallest'],

@@ -2,6 +2,8 @@ import {
   ResponsiveContainer,
   LineChart,
   Line,
+  AreaChart,
+  Area,
   BarChart,
   Bar,
   PieChart,
@@ -13,10 +15,12 @@ import {
   CartesianGrid,
 } from 'recharts';
 
+export type ChartType = 'line' | 'area' | 'bar' | 'horizontalBar' | 'pie';
+
 export type ChartSpec = {
   metricId: string;
   title: string;
-  chartType: 'line' | 'bar' | 'pie';
+  chartType: ChartType;
   kind: 'trend' | 'breakdown';
   categoryLabel: string;
   measureLabel: string;
@@ -62,6 +66,32 @@ export default function RyAgentChart({ spec, rows }: { spec: ChartSpec; rows: Ch
               <Tooltip {...tooltipStyle} />
               <Line type="monotone" dataKey="value" stroke="#22d3ee" strokeWidth={2} dot={false} />
             </LineChart>
+          ) : spec.chartType === 'area' ? (
+            <AreaChart data={rows} margin={{ top: 8, right: 12, left: -8, bottom: 4 }}>
+              <defs>
+                <linearGradient id="ryaArea" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.45} />
+                  <stop offset="100%" stopColor="#22d3ee" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+              <XAxis dataKey="category" tick={{ fill: '#64748b', fontSize: 9 }} interval={tickInterval} tickLine={false} />
+              <YAxis tick={{ fill: '#64748b', fontSize: 9 }} tickLine={false} width={38} />
+              <Tooltip {...tooltipStyle} />
+              <Area type="monotone" dataKey="value" stroke="#22d3ee" strokeWidth={2} fill="url(#ryaArea)" />
+            </AreaChart>
+          ) : spec.chartType === 'horizontalBar' ? (
+            <BarChart layout="vertical" data={rows} margin={{ top: 8, right: 16, left: 4, bottom: 4 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" horizontal={false} />
+              <XAxis type="number" tick={{ fill: '#64748b', fontSize: 9 }} tickLine={false} />
+              <YAxis type="category" dataKey="category" tick={{ fill: '#64748b', fontSize: 9 }} tickLine={false} width={90} />
+              <Tooltip {...tooltipStyle} cursor={{ fill: '#1e293b55' }} />
+              <Bar dataKey="value" radius={[0, 3, 3, 0]}>
+                {rows.map((_, i) => (
+                  <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
+                ))}
+              </Bar>
+            </BarChart>
           ) : spec.chartType === 'bar' ? (
             <BarChart data={rows} margin={{ top: 8, right: 12, left: -8, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />

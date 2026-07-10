@@ -49,7 +49,7 @@ async function resolveDescription(description: string): Promise<VizSpec> {
   ).join('\n');
 
   const system = `You map a user's request about a Fannie Mae mortgage portfolio to exactly one metric from a fixed catalog.
-Respond ONLY with JSON: {"metricId": string, "chartType": "line"|"bar"|"pie", "limit": number}.
+Respond ONLY with JSON: {"metricId": string, "chartType": "line"|"area"|"bar"|"horizontalBar"|"pie", "limit": number}.
 - metricId MUST be one of the catalog ids. If nothing fits, pick the closest.
 - chartType MUST be one the chosen metric supports.
 - limit is top-N categories (3-25), default ${DEFAULT_LIMIT}; only matters for breakdowns.
