@@ -125,7 +125,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     if (intent === 'PAGE_CONTEXT') {
       const p = describePage(pageContext);
-      streamText(`You're on ${p.label}. ${p.guidance.split('.')[0]}. Ask me anything about it.`);
+      const detail = p.blurb ? ` — ${p.blurb}.` : '.';
+      streamText(`You're on ${p.label}${detail} Ask me anything about it${p.mode === 'mortgage' ? ", or tell me a chart to build" : ''}.`);
       send({ type: 'done', meta: { intent } });
       return res.end();
     }
@@ -224,15 +225,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         } else if (tc.name === 'build_visualization') {
           let metricId = '';
           let chartType: ChartSpec['chartType'] | undefined;
+          let excludeCategories: string[] | undefined;
+          let includeCategories: string[] | undefined;
+          let sort: 'asc' | 'desc' | undefined;
+          let limit: number | undefined;
           try {
             const a = JSON.parse(tc.args || '{}');
             metricId = a.metricId;
             chartType = a.chartType;
+            if (Array.isArray(a.excludeCategories)) excludeCategories = a.excludeCategories;
+            if (Array.isArray(a.includeCategories)) includeCategories = a.includeCategories;
+            if (a.sort === 'asc' || a.sort === 'desc') sort = a.sort;
+            if (typeof a.limit === 'number') limit = a.limit;
           } catch {
             /* keep defaults */
           }
           send({ type: 'tool_start', name: tc.name, query: metricId || 'chart' });
-          const out = await runMortgageChart({ metricId, chartType });
+          const out = await runMortgageChart({ metricId, chartType, excludeCategories, includeCategories, sort, limit });
           sourcesUsed.push('fannie:mortgage_chart');
           if (out.ok) {
             send({ type: 'chart', chartSpec: out.chartSpec, rows: out.rows });

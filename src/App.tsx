@@ -777,11 +777,14 @@ function RyAgentProjectViewer({ onBack }: { onBack: () => void }) {
             </p>
           </div>
           <div>
-            <h4 className="font-medium text-cyan-400 mb-2">Custom visualizations</h4>
+            <h4 className="font-medium text-cyan-400 mb-2">Custom visualizations, on the fly</h4>
             <p className="text-slate-300 text-sm">
               On data projects with a live warehouse (e.g., Mortgage Portfolio Intelligence), RyAgent turns a
-              plain-English request into a chart. It maps your ask to a governed metric from a read-only semantic
-              layer and renders it in the chat—the model never writes SQL, so results stay accurate and safe.
+              plain-English request into a chart—and then keeps adjusting it as you talk. Ask it to drop a bucket,
+              show only certain categories, sort by size, switch to a bar or pie, or cap to the top&nbsp;N, and it
+              reshapes the visualization live. It maps every ask to a governed metric from a read-only semantic
+              layer, so the model never writes raw SQL—results stay accurate, cheap, and safe. It&apos;s a small
+              feature, but a genuinely fun one to try.
             </p>
           </div>
         </div>

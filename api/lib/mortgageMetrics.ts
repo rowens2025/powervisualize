@@ -234,8 +234,38 @@ export function listMortgageMetrics() {
   return MORTGAGE_METRICS.map(({ sql, ...rest }) => rest);
 }
 
-export type VizSpec = { metricId: string; chartType?: ChartType; limit?: number };
-export type ResolvedSpec = { metric: MortgageMetric; chartType: ChartType; limit: number };
+export type SortOrder = 'asc' | 'desc';
+
+export type VizSpec = {
+  metricId: string;
+  chartType?: ChartType;
+  limit?: number;
+  excludeCategories?: string[];
+  includeCategories?: string[];
+  sort?: SortOrder;
+};
+export type ResolvedSpec = {
+  metric: MortgageMetric;
+  chartType: ChartType;
+  limit: number;
+  /** Post-query cap on category count, only when the caller asked (breakdowns). */
+  topN?: number;
+  excludeCategories: string[];
+  includeCategories: string[];
+  sort?: SortOrder;
+};
+
+const MAX_KEYWORDS = 12;
+
+/** Normalize a caller-supplied keyword list to lowercase, deduped, capped terms. */
+function normalizeKeywords(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const terms = raw
+    .filter((c): c is string => typeof c === 'string')
+    .map((c) => c.trim().toLowerCase())
+    .filter((c) => c.length > 0);
+  return Array.from(new Set(terms)).slice(0, MAX_KEYWORDS);
+}
 
 export const DEFAULT_LIMIT = 10;
 const MIN_LIMIT = 3;
@@ -247,7 +277,14 @@ export function resolveSpec(spec: VizSpec): { ok: true; resolved: ResolvedSpec }
     return { ok: false, error: `Unknown metric "${spec.metricId}". Valid: ${MORTGAGE_METRICS.map((m) => m.id).join(', ')}.` };
   }
   let chartType = spec.chartType && metric.chartTypes.includes(spec.chartType) ? spec.chartType : metric.defaultChart;
-  let limit = typeof spec.limit === 'number' && Number.isFinite(spec.limit) ? Math.round(spec.limit) : DEFAULT_LIMIT;
+  const limitProvided = typeof spec.limit === 'number' && Number.isFinite(spec.limit);
+  let limit = limitProvided ? Math.round(spec.limit as number) : DEFAULT_LIMIT;
   limit = Math.max(MIN_LIMIT, Math.min(MAX_LIMIT, limit));
-  return { ok: true, resolved: { metric, chartType, limit } };
+  // topN is a post-query cap that only applies when the caller explicitly asked
+  // for one — so we never silently truncate an ordered series (e.g. vintages).
+  const topN = limitProvided ? limit : undefined;
+  const excludeCategories = normalizeKeywords(spec.excludeCategories);
+  const includeCategories = normalizeKeywords(spec.includeCategories);
+  const sort = spec.sort === 'asc' || spec.sort === 'desc' ? spec.sort : undefined;
+  return { ok: true, resolved: { metric, chartType, limit, topN, excludeCategories, includeCategories, sort } };
 }

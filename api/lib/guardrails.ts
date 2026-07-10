@@ -121,8 +121,13 @@ export function classifyIntent(question: string): Intent {
   const lower = question.toLowerCase().trim();
 
   const pageContextPatterns = [
-    /^(what page am i on|where am i|what is this page|what project is this|tell me about this page)$/i,
-    /\b(what page|where am i|what is this|tell me about this page|what project is this|what am i looking at|explain this)\b/i,
+    /\b(what|which)\s+(page|project|dashboard)\b/i,
+    /\b(where am i|what am i (on|looking at|viewing|seeing))\b/i,
+    // contractions + "about" phrasings: "what's this", "whats this about", "what is this page about"
+    // (but not "what's this chart/metric/number" — those are data questions)
+    /\bwhat('?s| is|s)\s+this\b(?!\s+(chart|metric|number|graph|visualization|viz|data\b))/i,
+    /\b(tell me about|explain)\s+(this|the)\s+(page|project|dashboard)\b/i,
+    /\b(am i on|arent i on|aren'?t i on|isn'?t this)\b/i,
   ];
   if (pageContextPatterns.some((p) => p.test(lower))) return 'PAGE_CONTEXT';
 

@@ -16,9 +16,9 @@ type Message = {
 type MetricChip = { id: string; label: string; example: string; kind: 'trend' | 'breakdown' };
 
 const SUGGESTED_QUESTIONS = [
+  'Show me a data product where AI builds custom charts',
   'Does Ryan have Power BI experience?',
   'What projects prove Python skills?',
-  'Tell me about the mortgage project',
   'Does Ryan have A/B testing experience?',
 ];
 
@@ -323,6 +323,12 @@ export default function RyanAgntDrawer({ isOpen, onClose, vizRequest = 0 }: Ryan
                     </button>
                   ))}
                 </div>
+                {!isMortgagePage && (
+                  <p className="mt-4 text-[11px] leading-relaxed text-slate-500 max-w-[18rem] mx-auto">
+                    💡 One of the datasets — <span className="text-slate-400">Mortgage Portfolio Intelligence</span> — lets you
+                    build custom charts on the fly. Just describe what you want and I&apos;ll render it live.
+                  </p>
+                )}
               </div>
             )}
 

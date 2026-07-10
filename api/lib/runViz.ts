@@ -26,7 +26,7 @@ export async function runMortgageChart(
   const resolution = resolveSpec(spec);
   if (!resolution.ok) return { ok: false, error: resolution.error };
 
-  const { metric, chartType, limit } = resolution.resolved;
+  const { metric, chartType, limit, topN, excludeCategories, includeCategories, sort } = resolution.resolved;
   const params = metric.usesLimit ? [limit] : [];
 
   // The Fannie compute can be cold (Neon suspends idle computes); the first
@@ -44,9 +44,57 @@ export async function runMortgageChart(
     }
   }
 
-  const rows: ChartRow[] = result.rows
+  let rows: ChartRow[] = result.rows
     .filter((r: any) => r.category != null && r.value != null)
     .map((r: any) => ({ category: String(r.category), value: Number(r.value) }));
+
+  // --- caller-requested reshaping (all post-query, no SQL) so RyAgent can adjust
+  // a chart dynamically: drop buckets, keep only some, reorder, or cap to top-N. ---
+
+  // Keep only categories matching a keyword ("just show 60-89 and 90+").
+  if (includeCategories.length > 0) {
+    const kept = rows.filter((r) => {
+      const cat = r.category.toLowerCase();
+      return includeCategories.some((term) => cat.includes(term));
+    });
+    if (kept.length === 0) {
+      return {
+        ok: false,
+        error: `No categories matched ${includeCategories.map((t) => `"${t}"`).join(', ')}. Try a broader keyword.`,
+      };
+    }
+    rows = kept;
+  }
+
+  // Drop categories matching a keyword (e.g. the dominant "current" bucket so the
+  // smaller delinquency buckets are legible). Case-insensitive substring match, so
+  // "current" removes "Loan is current (0-29 days past due)".
+  if (excludeCategories.length > 0) {
+    const kept = rows.filter((r) => {
+      const cat = r.category.toLowerCase();
+      return !excludeCategories.some((term) => cat.includes(term));
+    });
+    if (kept.length === 0) {
+      return {
+        ok: false,
+        error: `Excluding ${excludeCategories.map((t) => `"${t}"`).join(', ')} would remove every category. Try excluding fewer buckets.`,
+      };
+    }
+    rows = kept;
+  }
+
+  // Explicit sort by value (only when asked — otherwise preserve the metric's
+  // natural order, e.g. chronological months or ordered delinquency buckets).
+  if (sort) {
+    rows = [...rows].sort((a, b) => (sort === 'asc' ? a.value - b.value : b.value - a.value));
+  }
+
+  // Top-N cap for breakdowns when the caller asked for one. If no explicit sort
+  // was given, rank by value descending so "top N" means the largest N.
+  if (typeof topN === 'number' && metric.kind === 'breakdown' && rows.length > topN) {
+    const ranked = sort ? rows : [...rows].sort((a, b) => b.value - a.value);
+    rows = ranked.slice(0, topN);
+  }
 
   const chartSpec: ChartSpec = {
     metricId: metric.id,
