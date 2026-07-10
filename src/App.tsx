@@ -1435,7 +1435,7 @@ function About() {
           </p>
 
           <p>
-            I’ve also been using dbt since 2018—back when it was still Fishtown Analytics, my neighbors a few blocks over in Philly.
+            I’ve also been using dbt since 2018—back when it was still Fishtown Analytics, my neighbors a few blocks over in Philly. Those analytics-engineering habits stuck; I bring the same modular, well-tested, well-modeled approach to whatever stack I’m on now.
           </p>
 
           <p>
