@@ -1481,6 +1481,7 @@ function About() {
             <h4>AI & Agentic Engineering</h4>
             <ul>
               <li>All-in on agentic workflows — Claude Code, custom MCP servers, and AI-assisted development woven into everyday data work</li>
+              <li>Building agents that erase busy work — automated data-quality review and routine engineering ops that would otherwise eat hours — so I (and the team) move fast and stay on the hard problems</li>
               <li>Retrieval-Augmented Generation (RAG) over governed data, plus prompt, context, and token management</li>
               <li>
                 Building governed semantic layers that AI can consume directly — so an agent can generate and reshape
