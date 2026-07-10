@@ -1337,18 +1337,20 @@ function HeroCard({ setRoute, setOpenDataProject }: { setRoute: (r: Route) => vo
     <div className="relative rounded-3xl p-6 md:p-10 bg-gradient-to-br from-slate-900 to-slate-800 ring-1 ring-slate-700 shadow-2xl">
       <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-cyan-500/20 to-fuchsia-500/20 blur-2xl" />
       <div className="relative">
-        <h2 className="text-xl font-medium">Featured: NYC Flood Risk: Buildings vs Neighborhoods</h2>
-        <p className="text-slate-300 mt-2 text-sm">Interactive flood vulnerability mapping with enriched geospatial dataset visualization.</p>
+        <h2 className="text-xl font-medium">Featured: Mortgage Portfolio Intelligence</h2>
+        <p className="text-slate-300 mt-2 text-sm">
+          A live Fannie Mae warehouse — dbt marts, a React analytics dashboard, and RyAgent building custom charts you can reshape on the fly.
+        </p>
 
         <button
           onClick={() => {
-            setOpenDataProject('dp1');
+            setOpenDataProject('mortgage-performance-marts');
           }}
           className="mt-6 w-full aspect-video rounded-2xl ring-1 ring-slate-700 overflow-hidden bg-[#0b0f17] group cursor-pointer relative"
         >
           <img
-            src="/previews/dp1.png"
-            alt="NYC Flood Vulnerability Map"
+            src="/previews/fanniemae.png"
+            alt="Mortgage Portfolio Intelligence dashboard"
             className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-[1.01]"
             loading="lazy"
           />

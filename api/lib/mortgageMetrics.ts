@@ -226,12 +226,74 @@ export const MORTGAGE_METRICS: MortgageMetric[] = [
 
 const BY_ID = new Map(MORTGAGE_METRICS.map((m) => [m.id, m]));
 
+/**
+ * Per-metric "take it further" suggestions surfaced under a rendered chart.
+ * `hint` is a smart one-liner; each followUp is a plain-English prompt the
+ * visitor can tap — it's sent to RyAgent, which reshapes the chart live via the
+ * excludeCategories / includeCategories / sort / limit transforms. Phrased to
+ * name the chart explicitly so the agent always maps to the right metric.
+ */
+type MetricRefinement = { hint?: string; followUps: string[] };
+
+const METRIC_REFINEMENTS: Record<string, MetricRefinement> = {
+  delinquency_rate_30_plus_trend: {
+    followUps: ['Draw it as a bar chart', 'Break delinquency down by vintage year instead', 'Weight the delinquency rate by loan balance (UPB) instead'],
+  },
+  delinquency_upb_rate_trend: {
+    followUps: ['Draw it as a bar chart', 'Compare it to the loan-count delinquency rate'],
+  },
+  active_loan_count_trend: {
+    followUps: ['Draw it as a bar chart', 'Show active UPB over time instead', 'Show the 30+ delinquent loan count instead'],
+  },
+  active_upb_trend: {
+    followUps: ['Draw it as a bar chart', 'Show the active loan count over time instead'],
+  },
+  delinq_loan_count_trend: {
+    followUps: ['Draw it as a bar chart', 'Show the delinquency rate instead of the raw count'],
+  },
+  portfolio_by_delinquency_bucket: {
+    hint: "Heads up — the “current” bucket is so large it flattens everything else. That's exactly what these refinements fix:",
+    followUps: [
+      'Drop the “current” bucket so the delinquent tail is readable',
+      'Show only the 30-59, 60-89, and 90+ delinquent buckets',
+      'Sort the buckets from largest to smallest',
+      'Show it as a pie chart',
+    ],
+  },
+  upb_by_delinquency_bucket: {
+    hint: 'The “current” balance dominates the mix — try zeroing in on the delinquent share:',
+    followUps: [
+      'Drop the “current” bucket to see the delinquent balance',
+      'Show only the delinquent buckets (30+)',
+      'Sort by balance, largest first',
+    ],
+  },
+  delinquency_rate_by_vintage: {
+    hint: 'Zero in on the riskiest cohorts:',
+    followUps: ['Show only the 5 worst vintage years', 'Sort vintages from highest delinquency to lowest', 'Draw it as a line chart'],
+  },
+  loans_by_state: {
+    hint: 'This shows the largest states — narrow or widen the field:',
+    followUps: ['Just the top 5 states', 'Show the top 15 states', 'Sort states from most to fewest loans'],
+  },
+  loans_by_purpose: {
+    followUps: ['Draw it as a bar chart', 'Drop the smallest purpose category', 'Sort purposes from largest to smallest'],
+  },
+  avg_credit_score_by_vintage: {
+    followUps: ['Draw it as a bar chart', 'Show only the last 5 origination years', 'Sort by average credit score'],
+  },
+};
+
 export function getMortgageMetric(id: string): MortgageMetric | undefined {
   return BY_ID.get(id);
 }
 
 export function listMortgageMetrics() {
-  return MORTGAGE_METRICS.map(({ sql, ...rest }) => rest);
+  return MORTGAGE_METRICS.map(({ sql, ...rest }) => ({
+    ...rest,
+    hint: METRIC_REFINEMENTS[rest.id]?.hint,
+    followUps: METRIC_REFINEMENTS[rest.id]?.followUps ?? [],
+  }));
 }
 
 export type SortOrder = 'asc' | 'desc';

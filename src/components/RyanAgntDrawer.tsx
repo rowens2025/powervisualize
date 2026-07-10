@@ -11,9 +11,12 @@ type Message = {
   trace?: string[];
   chart?: { spec: ChartSpec; rows: ChartRow[] };
   meta?: { blocked?: boolean; locked_until?: string; strikes?: number };
+  /** "Take it further" refinement prompts shown under a rendered chart. */
+  suggestions?: string[];
+  suggestHint?: string;
 };
 
-type MetricChip = { id: string; label: string; example: string; kind: 'trend' | 'breakdown' };
+type MetricChip = { id: string; label: string; example: string; kind: 'trend' | 'breakdown'; hint?: string; followUps: string[] };
 
 const SUGGESTED_QUESTIONS = [
   'Show me a data product where AI builds custom charts',
@@ -225,7 +228,16 @@ export default function RyanAgntDrawer({ isOpen, onClose, vizRequest = 0 }: Ryan
       });
       const data = await resp.json();
       if (Array.isArray(data.metrics)) {
-        setVizMetrics(data.metrics.map((m: any) => ({ id: m.id, label: m.label, example: m.example, kind: m.kind })));
+        setVizMetrics(
+          data.metrics.map((m: any) => ({
+            id: m.id,
+            label: m.label,
+            example: m.example,
+            kind: m.kind,
+            hint: m.hint,
+            followUps: Array.isArray(m.followUps) ? m.followUps : [],
+          })),
+        );
       }
     } catch {
       /* viz stays unavailable */
@@ -252,9 +264,12 @@ export default function RyanAgntDrawer({ isOpen, onClose, vizRequest = 0 }: Ryan
       }
       const spec: ChartSpec = data.chartSpec;
       const rows: ChartRow[] = data.rows || [];
+      const metric = vizMetrics.find((m) => m.id === spec.metricId);
       patchLast(() => ({
         content: `Here's ${spec.title.toLowerCase()} from the Fannie Mae portfolio (${rows.length} data point${rows.length !== 1 ? 's' : ''}).`,
         chart: { spec, rows },
+        suggestions: metric?.followUps ?? [],
+        suggestHint: metric?.hint,
       }));
     } catch {
       patchLast(() => ({ content: 'The mortgage data source is unavailable right now. Please try again.' }));
@@ -363,6 +378,26 @@ export default function RyanAgntDrawer({ isOpen, onClose, vizRequest = 0 }: Ryan
                     <Suspense fallback={<p className="text-xs text-slate-400 mt-1">Rendering chart…</p>}>
                       <RyAgentChart spec={msg.chart.spec} rows={msg.chart.rows} />
                     </Suspense>
+                  )}
+
+                  {msg.chart && msg.suggestions && msg.suggestions.length > 0 && (
+                    <div className="mt-2.5 pt-2.5 border-t border-slate-700/70">
+                      <p className="text-[11px] text-slate-400 mb-1.5 leading-relaxed">
+                        {msg.suggestHint ?? 'Make it your own — tap a refinement and I’ll rebuild it live:'}
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {msg.suggestions.map((s, i) => (
+                          <button
+                            key={i}
+                            onClick={() => handleSend(s)}
+                            disabled={loading}
+                            className="px-2 py-1 text-[11px] rounded-md border border-cyan-500/30 bg-cyan-500/5 hover:bg-cyan-500/15 hover:border-cyan-500/50 transition-colors text-cyan-200 disabled:opacity-50"
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   )}
 
                   {msg.evidence_links && msg.evidence_links.length > 0 && (
