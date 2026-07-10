@@ -1431,6 +1431,10 @@ function About() {
           </p>
 
           <p>
+            I’m agentic by default: I lean on AI and custom MCP tooling to move fast and automate the busy work, and I design data products with semantic layers that AI can consume and act on directly.
+          </p>
+
+          <p>
             I’m Microsoft-first (Fabric, Synapse, Power BI, Azure), but I don’t get locked into tools—I ramp quickly and have delivered across modern stacks, including building a Snowflake warehouse from the ground up. Most of what I ship sits at the intersection of analytics and ML: trustworthy datasets, production-ready features, and model outputs that plug directly into decision workflows.
           </p>
 
