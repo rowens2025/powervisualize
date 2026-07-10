@@ -111,6 +111,23 @@ export default function RyanAgntDrawer({ isOpen, onClose, vizRequest = 0 }: Ryan
     });
   };
 
+  // Stable per-browser id so the owner can group a visitor's turns in the log.
+  // Anonymous (random) — not tied to any identity.
+  const getSessionId = (): string | undefined => {
+    try {
+      const existing = localStorage.getItem('ryagent_sid');
+      if (existing) return existing;
+      const id: string =
+        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : `sid_${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+      localStorage.setItem('ryagent_sid', id);
+      return id;
+    } catch {
+      return undefined;
+    }
+  };
+
   const getPageContext = () => ({
     path: window.location.pathname,
     title: document.title,
@@ -145,7 +162,7 @@ export default function RyanAgntDrawer({ isOpen, onClose, vizRequest = 0 }: Ryan
       const resp = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, history, pageContext: getPageContext() }),
+        body: JSON.stringify({ question, history, pageContext: getPageContext(), sessionId: getSessionId() }),
         signal: controller.signal,
       });
       clearTimeout(timeoutId);

@@ -4,6 +4,7 @@ import { pool } from './_db.js';
 import { searchPortfolio } from './lib/retrieval.js';
 import { buildSystemPrompt, describePage, getTools } from './lib/ryPrompt.js';
 import { runMortgageChart, type ChartSpec, type ChartRow } from './lib/runViz.js';
+import { logChatTurn } from './lib/chatLog.js';
 import {
   ACK_REPLY,
   MADISON_REPLIES,
@@ -36,6 +37,14 @@ import {
 
 const MODEL = 'gpt-4o-mini';
 const MAX_TOOL_TURNS = 3;
+
+function getClientIp(req: VercelRequest): string | undefined {
+  const xfwd = req.headers['x-forwarded-for'];
+  if (typeof xfwd === 'string' && xfwd.length > 0) return xfwd.split(',')[0].trim();
+  const realIp = req.headers['x-real-ip'];
+  if (typeof realIp === 'string' && realIp.length > 0) return realIp;
+  return req.socket?.remoteAddress || undefined;
+}
 
 type SseEvent =
   | { type: 'thinking' }
@@ -82,6 +91,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const question = typeof req.body?.question === 'string' ? req.body.question.trim() : '';
   const history = Array.isArray(req.body?.history) ? (req.body.history as ChatMsg[]) : [];
   const pageContext = req.body?.pageContext as PageContext | undefined;
+  const sessionId = typeof req.body?.sessionId === 'string' ? req.body.sessionId.slice(0, 100) : undefined;
+  const clientIp = getClientIp(req);
+  const userAgent = typeof req.headers['user-agent'] === 'string' ? (req.headers['user-agent'] as string) : undefined;
 
   if (!question) {
     res.status(400).json({ error: 'Missing required field: question' });
@@ -97,7 +109,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Cache-Control', 'no-cache, no-transform');
   res.setHeader('Connection', 'keep-alive');
   const send = (ev: SseEvent) => res.write(`data: ${JSON.stringify(ev)}\n\n`);
-  const streamText = (text: string) => send({ type: 'text', content: text });
+  // Buffer streamed text so we can persist the full answer to the write-only log.
+  const answerParts: string[] = [];
+  const streamText = (text: string) => {
+    answerParts.push(text);
+    send({ type: 'text', content: text });
+  };
+  const recordTurn = (extra: { intent?: string; blocked?: boolean; truncated?: boolean; error?: string; sourcesUsed?: string[] }) =>
+    logChatTurn(pool, { sessionId, clientIp, userAgent, page: pageContext, question, answer: answerParts.join(''), ...extra });
 
   try {
     const intent = classifyIntent(question);
@@ -106,21 +125,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (intent === 'ACKNOWLEDGEMENT') {
       streamText(ACK_REPLY);
       send({ type: 'done', meta: { intent } });
+      recordTurn({ intent });
       return res.end();
     }
     if (intent === 'MADISON') {
       streamText(MADISON_REPLIES[Math.floor((Date.now() / 1000) % MADISON_REPLIES.length)]);
       send({ type: 'done', meta: { intent } });
+      recordTurn({ intent });
       return res.end();
     }
     if (intent === 'WORK_STYLE') {
       streamText(WORK_STYLE_REPLY);
       send({ type: 'done', meta: { intent } });
+      recordTurn({ intent });
       return res.end();
     }
     if (intent === 'PERSONAL') {
       streamText(PERSONAL_REPLY);
       send({ type: 'done', meta: { intent } });
+      recordTurn({ intent });
       return res.end();
     }
     if (intent === 'PAGE_CONTEXT') {
@@ -128,6 +151,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const detail = p.blurb ? ` — ${p.blurb}.` : '.';
       streamText(`You're on ${p.label}${detail} Ask me anything about it${p.mode === 'mortgage' ? ", or tell me a chart to build" : ''}.`);
       send({ type: 'done', meta: { intent } });
+      recordTurn({ intent });
       return res.end();
     }
 
@@ -141,6 +165,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         streamText("I can only help with Ryan's skills, projects, and data work. Ask about Power BI, Synapse, A/B testing, or his portfolio projects.");
       }
       send({ type: 'done', meta: { intent, blocked: true } });
+      recordTurn({ intent, blocked: true });
       return res.end();
     }
 
@@ -192,6 +217,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // No tool calls -> the model answered; we're done.
       if (finishReason !== 'tool_calls' || toolCalls.length === 0) {
         send({ type: 'done', meta: { intent, sources_used: sourcesUsed } });
+        recordTurn({ intent, sourcesUsed });
         return res.end();
       }
 
@@ -264,10 +290,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Exhausted tool turns without a final answer.
     streamText('I hit my reasoning limit — please try rephrasing, or visit the contact section.');
     send({ type: 'done', meta: { intent, sources_used: sourcesUsed, truncated: true } });
+    recordTurn({ intent, sourcesUsed, truncated: true });
     return res.end();
   } catch (err: any) {
     console.error('[API] /api/chat error:', err?.message ?? err);
     send({ type: 'error', message: 'RyAgent hit a snag. Please try again.' });
+    recordTurn({ error: err?.message ? String(err.message).slice(0, 500) : 'unknown error' });
     return res.end();
   }
 }

@@ -1432,7 +1432,11 @@ function About() {
           </p>
 
           <p>
-            I’m Microsoft-first (Fabric, Synapse, Power BI, Azure), but I don’t get locked into tools—I ramp quickly and have delivered across modern stacks when needed (including Snowflake and Databricks-style workflows). Most of what I ship sits at the intersection of analytics and ML: trustworthy datasets, production-ready features, and model outputs that plug directly into decision workflows.
+            I’m Microsoft-first (Fabric, Synapse, Power BI, Azure), but I don’t get locked into tools—I ramp quickly and have delivered across modern stacks, including building a Snowflake warehouse from the ground up. Most of what I ship sits at the intersection of analytics and ML: trustworthy datasets, production-ready features, and model outputs that plug directly into decision workflows.
+          </p>
+
+          <p>
+            I’ve also been in the dbt world since the early days—around 2018, back when it was still Fishtown Analytics, a company that happened to be a few blocks from where I lived in Philly. It isn’t my day-to-day stack at the moment, but the analytics-engineering habits stuck: the way I build medallion pipelines in Python—modular transforms, real tests, and a governed semantic layer in Cube—comes straight from that same mindset.
           </p>
 
           <p>
@@ -1450,8 +1454,9 @@ function About() {
             <ul>
               <li>Python & SQL pipelines (ETL/ELT), orchestration, incremental loads, and performance tuning</li>
               <li>Data modeling: star schemas, analytical tables, semantic models, and metric layers</li>
+              <li><strong>Analytics engineering:</strong> dbt (models, tests, docs) with Airflow-orchestrated pipelines</li>
               <li>Data quality & validation: checks, reconciliation, and operational monitoring</li>
-              <li><strong>Microsoft stack:</strong> Fabric (Lakehouse/Warehouse), Synapse, Power BI, Azure</li>
+              <li><strong>Microsoft stack:</strong> Fabric (Lakehouse/Warehouse), Synapse, Power BI, Azure — plus Snowflake</li>
             </ul>
 
             <h4>Machine Learning & Applied Analytics</h4>
@@ -1472,6 +1477,12 @@ function About() {
             <ul>
               <li>Workflow automation with Power Automate and API-based integrations</li>
               <li>Operational tooling to reduce manual work and speed up delivery cycles</li>
+            </ul>
+
+            <h4>AI & Agentic Engineering</h4>
+            <ul>
+              <li>All-in on agentic workflows — Claude Code, custom MCP servers, and AI-assisted development woven into everyday data work</li>
+              <li>Retrieval-Augmented Generation (RAG) over governed data, plus prompt, context, and token management</li>
             </ul>
 
             <p className="mt-6">

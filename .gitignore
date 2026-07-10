@@ -9,10 +9,12 @@ dist
 .env
 .env*.local
 
-# Private resume files (keep data/resume_canonical.json committed)
+# Private resume files (kept out of the public repo; nothing reads them at runtime)
+data/resume_canonical.json
 Resume*.docx
 Resume*.pdf
 Resume*.doc
+*Resume*.docx
 resumes/
 private/
 
