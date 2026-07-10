@@ -11,6 +11,19 @@ export default function RyanAgntWidget({ isHomePage = false }: RyanAgntWidgetPro
   const [showToast, setShowToast] = useState(false);
   const [hasAnimated, setHasAnimated] = useState(false);
   const [showThoughtBubble, setShowThoughtBubble] = useState(false);
+  // Bumped whenever a page asks RyAgent to open straight into the viz builder.
+  const [vizRequest, setVizRequest] = useState(0);
+
+  // Allow any page (e.g. the mortgage project callout) to open the drawer via a
+  // window event: window.dispatchEvent(new CustomEvent('ryagent:open', { detail: { viz: true } }))
+  useEffect(() => {
+    const handler = (e: Event) => {
+      setIsOpen(true);
+      if ((e as CustomEvent).detail?.viz) setVizRequest((v) => v + 1);
+    };
+    window.addEventListener('ryagent:open', handler as EventListener);
+    return () => window.removeEventListener('ryagent:open', handler as EventListener);
+  }, []);
 
   useEffect(() => {
     // Check if toast was already shown this session
@@ -104,7 +117,7 @@ export default function RyanAgntWidget({ isHomePage = false }: RyanAgntWidgetPro
       )}
 
       {/* Drawer */}
-      <RyanAgntDrawer isOpen={isOpen} onClose={() => setIsOpen(false)} />
+      <RyanAgntDrawer isOpen={isOpen} onClose={() => setIsOpen(false)} vizRequest={vizRequest} />
     </>
   );
 }

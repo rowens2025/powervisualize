@@ -734,6 +734,16 @@ function RyAgentProjectViewer({ onBack }: { onBack: () => void }) {
         <p className="text-slate-300 leading-relaxed">
           This project uses dbt-style analytics engineering to turn portfolio metadata into a governed warehouse layer that the chatbot can query deterministically. Raw tables (projects, pages, skills, and bridge tables) are modeled into a dedicated analytics schema using a layered approach: staging models normalize and type-clean source data, dimensional models define stable entities (projects/pages/skills), and marts/fact tables provide agent-friendly aggregates and denormalized views (e.g., project profiles and skill counts). dbt tests enforce correctness (unique keys, non-null constraints, relationship integrity, and accepted values), and dbt Docs produces an interactive lineage graph so the entire transformation pipeline is auditable end-to-end.
         </p>
+        <p className="text-slate-300 leading-relaxed mt-4">
+          RyAgent now answers as a streaming, tool-using agent: instead of pre-loading data, it calls a
+          <span className="text-slate-200"> search_portfolio</span> tool against the marts on demand and streams its
+          reasoning, evidence, and answer token-by-token. On data projects that have their own live warehouse—like
+          <span className="text-slate-200"> Mortgage Portfolio Intelligence</span> (a separate Fannie Mae Postgres
+          warehouse)—RyAgent can also <span className="text-slate-200">build custom visualizations on demand</span>:
+          you describe a chart in plain English, the agent maps it to a governed metric from a read-only semantic
+          layer, and a chart renders in the chat. The model only selects from an approved metric catalog, so it never
+          writes raw SQL—keeping the feature cheap, safe, and grounded in real numbers.
+        </p>
       </div>
 
       {/* How it Works Section */}
@@ -764,6 +774,14 @@ function RyAgentProjectViewer({ onBack }: { onBack: () => void }) {
             <h4 className="font-medium text-cyan-400 mb-2">Explainable trace</h4>
             <p className="text-slate-300 text-sm">
               Real counts from marts are displayed in trace messages, showing exactly what was searched and found—no fabricated narration, only truthful query results.
+            </p>
+          </div>
+          <div>
+            <h4 className="font-medium text-cyan-400 mb-2">Custom visualizations</h4>
+            <p className="text-slate-300 text-sm">
+              On data projects with a live warehouse (e.g., Mortgage Portfolio Intelligence), RyAgent turns a
+              plain-English request into a chart. It maps your ask to a governed metric from a read-only semantic
+              layer and renders it in the chat—the model never writes SQL, so results stay accurate and safe.
             </p>
           </div>
         </div>
@@ -888,7 +906,7 @@ function RyAgentProjectViewer({ onBack }: { onBack: () => void }) {
               dbt Models (GitHub)
             </a>
             <a
-              href="https://github.com/rowens2025/powervisualize/blob/main/api/ask.ts"
+              href="https://github.com/rowens2025/powervisualize/blob/main/api/chat.ts"
               target="_blank"
               rel="noopener noreferrer"
               className="px-4 py-2 rounded-xl border border-slate-700 hover:bg-slate-800 transition-all duration-200 hover:translate-y-[-1px]"
@@ -1191,6 +1209,31 @@ function MortgageMartsProjectViewer({ onBack }: { onBack: () => void }) {
         <p className="text-slate-300 leading-relaxed text-sm sm:text-base">
           This project demonstrates an analytics-engineering pattern: loan performance lands in Postgres (Neon), is modeled with dbt into curated marts (KPI time series, roll-forward, vintage cohorts, delinquency bucket mix), and is explored through a React + Vite dashboard with statistical overlays (for example Wilson-style confidence bands) and cohort navigation—similar in spirit to how a GSE or bank might govern a monthly performance book.
         </p>
+      </div>
+
+      {/* RyAgent custom-visualization callout */}
+      <div className={introMax}>
+        <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-r from-cyan-500/10 to-fuchsia-500/10 p-4 sm:p-5">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl leading-none" aria-hidden>📊</span>
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-base font-semibold text-slate-100">Build your own visualization with RyAgent</h3>
+              <p className="mt-1 text-xs sm:text-sm text-slate-300 leading-relaxed">
+                This portfolio is backed by a live Fannie Mae warehouse. Ask RyAgent in plain English—for example
+                {' '}<span className="text-slate-200">“show the 30+ delinquency rate over time”</span> or
+                {' '}<span className="text-slate-200">“loans by state”</span>—and it maps your request to a governed
+                metric and renders a chart on the spot. The agent only picks from a curated, read-only semantic
+                layer, so it never writes raw SQL against the data.
+              </p>
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('ryagent:open', { detail: { viz: true } }))}
+                className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm bg-gradient-to-r from-cyan-400 to-fuchsia-500 text-slate-900 shadow-lg shadow-cyan-900/20 hover:opacity-95 transition-opacity"
+              >
+                <span aria-hidden>📊</span> Build a visualization with RyAgent
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {dashboardUrl ? (

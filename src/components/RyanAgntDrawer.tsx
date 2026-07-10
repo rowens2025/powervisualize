@@ -1,267 +1,266 @@
-import { useState, useRef, useEffect } from 'react';
-import SmartThinking from './SmartThinking';
+import { useState, useRef, useEffect, lazy, Suspense } from 'react';
+import type { ChartSpec, ChartRow } from './RyAgentChart';
+
+// recharts is heavy and only needed on the mortgage page — load it on demand.
+const RyAgentChart = lazy(() => import('./RyAgentChart'));
 
 type Message = {
   role: 'user' | 'assistant';
   content: string;
-  skills_confirmed?: string[];
   evidence_links?: { title: string; url: string }[];
-  missing_info?: string[];
   trace?: string[];
-  meta?: {
-    blocked?: boolean;
-    locked_until?: string;
-    strikes?: number;
-  };
+  chart?: { spec: ChartSpec; rows: ChartRow[] };
+  meta?: { blocked?: boolean; locked_until?: string; strikes?: number };
 };
+
+type MetricChip = { id: string; label: string; example: string; kind: 'trend' | 'breakdown' };
 
 const SUGGESTED_QUESTIONS = [
-  "Does Ryan have Power BI experience?",
-  "What projects prove Python skills?",
-  "Show evidence of Azure Synapse experience",
-  "Does Ryan have A/B testing experience?",
-  "What's Ryan's strongest skill area?",
-  "Can Ryan build production BI platforms?"
+  'Does Ryan have Power BI experience?',
+  'What projects prove Python skills?',
+  'Tell me about the mortgage project',
+  'Does Ryan have A/B testing experience?',
 ];
 
-// Phone number removed - use contact section instead
+// On the mortgage page — nudge visitors into the Fannie Mae data so they chart-build.
+const MORTGAGE_SUGGESTIONS = [
+  'Show the 30+ delinquency rate trend',
+  'Which states have the most loans?',
+  'Chart active UPB over time',
+  'Build me a cool chart from this data',
+];
 
-type RyanAgntDrawerProps = {
-  isOpen: boolean;
-  onClose: () => void;
-};
+const MORTGAGE_SLUG = 'mortgage-portfolio-intelligence';
 
-export default function RyanAgntDrawer({ isOpen, onClose }: RyanAgntDrawerProps) {
+type RyanAgntDrawerProps = { isOpen: boolean; onClose: () => void; vizRequest?: number };
+
+export default function RyanAgntDrawer({ isOpen, onClose, vizRequest = 0 }: RyanAgntDrawerProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLocked, setIsLocked] = useState(false);
   const [lockedUntil, setLockedUntil] = useState<string | null>(null);
-  const [messageCount, setMessageCount] = useState(0);
-  const [lastContactShownAt, setLastContactShownAt] = useState(0);
+
+  // viz-builder state (mortgage page only)
+  const [isMortgagePage, setIsMortgagePage] = useState(false);
+  const [vizOpen, setVizOpen] = useState(false);
+  const [vizMetrics, setVizMetrics] = useState<MetricChip[]>([]);
+  const [vizInput, setVizInput] = useState('');
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
 
   useEffect(() => {
     if (isOpen) {
-      // Only scroll to bottom when new messages are added, not on initial open
-      if (messages.length > 0) {
-        scrollToBottom();
-      }
+      if (messages.length > 0) scrollToBottom();
       inputRef.current?.focus();
+      // detect mortgage project page each time the drawer opens (SPA nav)
+      const onMortgage = typeof window !== 'undefined' && window.location.pathname.includes(MORTGAGE_SLUG);
+      setIsMortgagePage(onMortgage);
+      if (onMortgage && vizMetrics.length === 0) loadVizMetrics();
     }
-  }, [messages, isOpen]);
+  }, [messages, isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Page asked to open straight into the viz builder (mortgage page callout).
+  useEffect(() => {
+    if (vizRequest > 0) {
+      const onMortgage = typeof window !== 'undefined' && window.location.pathname.includes(MORTGAGE_SLUG);
+      setIsMortgagePage(onMortgage);
+      if (onMortgage) {
+        setVizOpen(true);
+        if (vizMetrics.length === 0) loadVizMetrics();
+      }
+    }
+  }, [vizRequest]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    // Load messages from sessionStorage on mount
     const saved = sessionStorage.getItem('ryanAgntMessages');
-    const savedCount = sessionStorage.getItem('ryanAgntMessageCount');
-    const savedLastContact = sessionStorage.getItem('ryanAgntLastContact');
-    
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         setMessages(parsed);
-        
-        // Restore message count
-        if (savedCount) {
-          const count = parseInt(savedCount, 10);
-          setMessageCount(count);
-        } else {
-          // Count user messages if count not saved
-          const userMsgCount = parsed.filter((m: Message) => m.role === 'user').length;
-          setMessageCount(userMsgCount);
+        const last = parsed[parsed.length - 1];
+        if (last?.meta?.locked_until && Date.now() < new Date(last.meta.locked_until).getTime()) {
+          setIsLocked(true);
+          setLockedUntil(last.meta.locked_until);
         }
-        
-        // Restore last contact shown
-        if (savedLastContact) {
-          setLastContactShownAt(parseInt(savedLastContact, 10));
-        }
-        
-        // Check if locked
-        const lastMessage = parsed[parsed.length - 1];
-        if (lastMessage?.meta?.locked_until) {
-          const lockTime = new Date(lastMessage.meta.locked_until).getTime();
-          if (Date.now() < lockTime) {
-            setIsLocked(true);
-            setLockedUntil(lastMessage.meta.locked_until);
-          }
-        }
-      } catch (e) {
-        // Ignore parse errors
+      } catch {
+        /* ignore */
       }
     }
   }, []);
 
   useEffect(() => {
-    // Save messages to sessionStorage
-    if (messages.length > 0) {
-      sessionStorage.setItem('ryanAgntMessages', JSON.stringify(messages));
-      sessionStorage.setItem('ryanAgntMessageCount', messageCount.toString());
-      sessionStorage.setItem('ryanAgntLastContact', lastContactShownAt.toString());
-    }
-  }, [messages, messageCount, lastContactShownAt]);
+    if (messages.length > 0) sessionStorage.setItem('ryanAgntMessages', JSON.stringify(messages));
+  }, [messages]);
 
-  const handleSend = async () => {
-    if (!input.trim() || loading || isLocked) return;
+  // --- update the trailing assistant message immutably as SSE events arrive ---
+  const patchLast = (mut: (m: Message) => Partial<Message>) => {
+    setMessages((prev) => {
+      if (prev.length === 0) return prev;
+      const copy = [...prev];
+      const last = copy[copy.length - 1];
+      copy[copy.length - 1] = { ...last, ...mut(last) };
+      return copy;
+    });
+  };
 
-    const userMessage: Message = {
-      role: 'user',
-      content: input.trim()
-    };
+  const getPageContext = () => ({
+    path: window.location.pathname,
+    title: document.title,
+    pageSlug: window.location.pathname.split('/').filter(Boolean).pop() || '',
+    pageType: window.location.pathname.startsWith('/data-projects/')
+      ? 'data-project'
+      : window.location.pathname.startsWith('/dashboards/')
+        ? 'dashboard'
+        : window.location.pathname === '/'
+          ? 'home'
+          : 'other',
+  });
 
-    const isMadisonMessage = userMessage.content.toLowerCase().includes('madison');
-    const isAcknowledgement = /^(ok|okay|cool|thanks|thank you|got it|sounds good|nice|alright|sure|yep|yeah|yes|no|nope)$/i.test(userMessage.content.trim());
-
-    setMessages(prev => [...prev, userMessage]);
+  const handleSend = async (override?: string) => {
+    const raw = override ?? input;
+    if (!raw.trim() || loading || isLocked) return;
+    const question = raw.trim();
     setInput('');
-    
-    // Fast-path: minimal loading for acknowledgements
-    if (!isAcknowledgement) {
-      setLoading(true);
-    }
     setError(null);
+    setLoading(true);
+    setMessages((prev) => [
+      ...prev,
+      { role: 'user', content: question },
+      { role: 'assistant', content: '', evidence_links: [], trace: [] },
+    ]);
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const history = messages.map((m) => ({ role: m.role, content: m.content }));
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      try {
-        const requestStartTime = Date.now();
-        
-        // Extract page context from current location
-        const pageContext = {
-          path: window.location.pathname,
-          title: document.title,
-          pageSlug: window.location.pathname.split('/').filter(Boolean).pop() || '',
-          pageType: window.location.pathname.startsWith('/data-projects/') ? 'data-project' :
-                    window.location.pathname.startsWith('/dashboards/') ? 'dashboard' :
-                    window.location.pathname.startsWith('/dashboards') ? 'dashboards-list' :
-                    window.location.pathname.startsWith('/data-projects') ? 'data-projects-list' :
-                    window.location.pathname === '/' ? 'home' : 'other'
-        };
-        
-        const response = await fetch('/api/ask', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            question: userMessage.content,
-            history: messages.map(m => ({ role: m.role, content: m.content })),
-            pageContext
-          }),
-          signal: controller.signal
-        });
+    try {
+      const resp = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, history, pageContext: getPageContext() }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
 
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          if (response.status === 429) {
-            throw new Error('Rate limit exceeded. Please wait a moment and try again.');
-          }
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.answer || errorData.error || `Error: ${response.statusText}`);
+      const ct = resp.headers.get('content-type') || '';
+      if (!resp.ok || !ct.includes('event-stream') || !resp.body) {
+        // non-streaming path: blocked / rate-limited / misconfig
+        const data = await resp.json().catch(() => ({}));
+        if (data.locked_until) {
+          setIsLocked(true);
+          setLockedUntil(data.locked_until);
         }
+        patchLast(() => ({
+          content: data.answer || data.error || 'Sorry, I could not answer that. Please try again.',
+          meta: { blocked: !!data.blocked, locked_until: data.locked_until },
+        }));
+        return;
+      }
 
-        const data = await response.json();
-        const requestDuration = Date.now() - requestStartTime;
-      
-      // Fast-path responses: add minimal delay for perceived intelligence
-      if (data.meta?.fast_path && !isAcknowledgement) {
-        await new Promise(resolve => setTimeout(resolve, 300)); // Brief delay
-      }
-      
-      // Increment message count
-      const newMessageCount = messageCount + 1;
-      setMessageCount(newMessageCount);
-      
-      // Determine if we should show contact section link
-      // Show after 3+ questions, then every 3 messages after that
-      const shouldShowContact = newMessageCount >= 3 && (newMessageCount - lastContactShownAt >= 3 || lastContactShownAt === 0);
-      
-      let answerText = data.answer || 'No answer provided.';
-      // Remove any phone numbers that might have been included in the response
-      answerText = answerText.replace(/\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/g, '').replace(/call.*ryan.*for.*answers.*at/gi, 'visit the contact section for').trim();
-      
-      if (shouldShowContact && !data.meta?.fast_path) {
-        answerText += ' For further clarification, visit the contact section.';
-        setLastContactShownAt(newMessageCount);
-      }
-      
-      // Display trace with delays if present and request took >700ms
-      // Faster cycling: reduced delays for quicker progression
-      if (data.trace && Array.isArray(data.trace) && data.trace.length > 0 && requestDuration > 700) {
-        // Add trace messages one by one with shorter delays
-        for (let i = 0; i < data.trace.length; i++) {
-          const traceMessage: Message = {
-            role: 'assistant',
-            content: data.trace[i],
-            skills_confirmed: [],
-            evidence_links: [],
-            missing_info: [],
-            trace: [data.trace[i]] // Mark as trace message
-          };
-          setMessages(prev => [...prev, traceMessage]);
-          // Faster delay between trace lines (50-100ms instead of 150-250ms)
-          if (i < data.trace.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 50));
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      let streamDone = false;
+
+      while (!streamDone) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let nl: number;
+        while ((nl = buf.indexOf('\n\n')) !== -1) {
+          const raw = buf.slice(0, nl);
+          buf = buf.slice(nl + 2);
+          const line = raw.split('\n').find((l) => l.startsWith('data:'));
+          if (!line) continue;
+          let ev: any;
+          try {
+            ev = JSON.parse(line.slice(5).trim());
+          } catch {
+            continue;
+          }
+          if (ev.type === 'tool_end') {
+            patchLast((m) => ({
+              trace: [...(m.trace || []), ev.summary],
+              evidence_links: mergeEvidence(m.evidence_links, ev.evidence),
+            }));
+          } else if (ev.type === 'chart') {
+            patchLast(() => ({ chart: { spec: ev.chartSpec, rows: ev.rows } }));
+          } else if (ev.type === 'text') {
+            patchLast((m) => ({ content: m.content + ev.content }));
+          } else if (ev.type === 'done') {
+            if (ev.meta?.locked_until) {
+              setIsLocked(true);
+              setLockedUntil(ev.meta.locked_until);
+            }
+            streamDone = true;
+          } else if (ev.type === 'error') {
+            patchLast(() => ({ content: 'RyAgent hit a snag. Please try again, or visit the contact section.' }));
+            streamDone = true;
           }
         }
-        // Shorter delay before final answer (100ms instead of 200ms)
-        await new Promise(resolve => setTimeout(resolve, 100));
       }
-      
-      const assistantMessage: Message = {
-        role: 'assistant',
-        content: answerText,
-        skills_confirmed: data.skills_confirmed || [],
-        evidence_links: data.evidence_links || [],
-        missing_info: data.missing_info || [],
-        trace: data.trace,
-        meta: data.meta
-      };
-
-      // Check if locked
-      if (data.meta?.locked_until) {
-        setIsLocked(true);
-        setLockedUntil(data.meta.locked_until);
-      }
-
-      setMessages(prev => [...prev, assistantMessage]);
     } catch (err: any) {
       clearTimeout(timeoutId);
-      
-      let errorMessage = 'RyAgent hit a snag—try again, or visit the contact section.';
-      
-      if (err.name === 'AbortError') {
-        errorMessage = 'Request timed out. Please try again, or visit the contact section.';
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-      
-      setError(errorMessage);
-      
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again, or visit the contact section.',
-        skills_confirmed: [],
-        evidence_links: [],
-        missing_info: []
-      }]);
+      const msg = err?.name === 'AbortError' ? 'Request timed out. Please try again.' : 'Sorry, I encountered an error. Please try again.';
+      setError(msg);
+      patchLast(() => ({ content: msg }));
     } finally {
       setLoading(false);
       inputRef.current?.focus();
     }
   };
 
-  const handleSuggestedQuestion = (question: string) => {
-    setInput(question);
-    inputRef.current?.focus();
+  // --- viz builder ---
+  const loadVizMetrics = async () => {
+    try {
+      const resp = await fetch('/api/visualize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'list' }),
+      });
+      const data = await resp.json();
+      if (Array.isArray(data.metrics)) {
+        setVizMetrics(data.metrics.map((m: any) => ({ id: m.id, label: m.label, example: m.example, kind: m.kind })));
+      }
+    } catch {
+      /* viz stays unavailable */
+    }
+  };
+
+  const runViz = async (payload: { mode: 'run'; spec: { metricId: string } } | { mode: 'resolve'; description: string }, userLabel: string) => {
+    if (loading) return;
+    setError(null);
+    setLoading(true);
+    setVizOpen(false);
+    setVizInput('');
+    setMessages((prev) => [...prev, { role: 'user', content: userLabel }, { role: 'assistant', content: '', trace: [] }]);
+    try {
+      const resp = await fetch('/api/visualize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await resp.json();
+      if (!resp.ok || !data.chartSpec) {
+        patchLast(() => ({ content: data.error || 'I could not build that visualization. Try one of the example metrics.' }));
+        return;
+      }
+      const spec: ChartSpec = data.chartSpec;
+      const rows: ChartRow[] = data.rows || [];
+      patchLast(() => ({
+        content: `Here's ${spec.title.toLowerCase()} from the Fannie Mae portfolio (${rows.length} data point${rows.length !== 1 ? 's' : ''}).`,
+        chart: { spec, rows },
+      }));
+    } catch {
+      patchLast(() => ({ content: 'The mortgage data source is unavailable right now. Please try again.' }));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -271,34 +270,22 @@ export default function RyanAgntDrawer({ isOpen, onClose }: RyanAgntDrawerProps)
     }
   };
 
-  const getLockedMessage = () => {
+  const lockedMessage = (() => {
     if (!lockedUntil) return null;
     const lockTime = new Date(lockedUntil).getTime();
-    const now = Date.now();
-    if (now >= lockTime) {
-      setIsLocked(false);
-      setLockedUntil(null);
-      return null;
-    }
-    const minutesLeft = Math.ceil((lockTime - now) / 60000);
+    if (Date.now() >= lockTime) return null;
+    const minutesLeft = Math.ceil((lockTime - Date.now()) / 60000);
     return `Chat locked. Try again in ${minutesLeft} minute${minutesLeft !== 1 ? 's' : ''}.`;
-  };
+  })();
 
-  const lockedMessage = getLockedMessage();
+  const isTraceOnly = (m: Message) => m.role === 'assistant' && !m.content && !m.chart && (m.trace?.length || 0) > 0;
 
   return (
     <>
-      {/* Backdrop */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/20 z-40 transition-opacity"
-          onClick={onClose}
-        />
-      )}
+      {isOpen && <div className="fixed inset-0 bg-black/20 z-40 transition-opacity" onClick={onClose} />}
 
-      {/* Drawer */}
       <div
-        className={`fixed top-[15%] left-[10%] sm:top-0 sm:right-0 sm:left-auto h-[85%] sm:h-full w-[90%] sm:w-[420px] bg-slate-900 border-l border-slate-800 z-50 transform transition-transform duration-300 ease-out shadow-2xl rounded-t-2xl sm:rounded-none ${
+        className={`fixed top-[15%] left-[10%] sm:top-0 sm:right-0 sm:left-auto h-[85%] sm:h-full w-[90%] sm:w-[440px] bg-slate-900 border-l border-slate-800 z-50 transform transition-transform duration-300 ease-out shadow-2xl rounded-t-2xl sm:rounded-none ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -308,14 +295,10 @@ export default function RyanAgntDrawer({ isOpen, onClose }: RyanAgntDrawerProps)
             <div>
               <h2 className="text-lg font-semibold">RyAgent</h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                Evidence-grounded answers about skills & projects
+                {isMortgagePage ? 'Ask about the portfolio — or build a chart from the data' : 'Evidence-grounded answers about skills & projects'}
               </p>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-lg hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-200"
-              aria-label="Close"
-            >
+            <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-200" aria-label="Close">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                 <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               </svg>
@@ -326,13 +309,15 @@ export default function RyanAgntDrawer({ isOpen, onClose }: RyanAgntDrawerProps)
           <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-950/40">
             {messages.length === 0 && (
               <div className="text-center py-8">
-                <p className="text-slate-400 mb-4 text-sm">Ask a question to get started:</p>
+                <p className="text-slate-400 mb-4 text-sm">
+                  {isMortgagePage ? 'Explore the Fannie Mae data — tap one to start:' : 'Ask a question to get started:'}
+                </p>
                 <div className="flex flex-wrap gap-2 justify-center">
-                  {SUGGESTED_QUESTIONS.slice(0, 4).map((q, i) => (
+                  {(isMortgagePage ? MORTGAGE_SUGGESTIONS : SUGGESTED_QUESTIONS).map((q, i) => (
                     <button
                       key={i}
-                      onClick={() => handleSuggestedQuestion(q)}
-                      className="px-3 py-1.5 text-xs rounded-lg border border-slate-700 hover:bg-slate-800 hover:border-slate-600 transition-colors text-slate-300"
+                      onClick={() => handleSend(q)}
+                      className="px-3 py-1.5 text-xs rounded-lg border border-slate-700 hover:bg-slate-800 hover:border-cyan-500/40 transition-colors text-slate-300"
                     >
                       {q}
                     </button>
@@ -341,42 +326,37 @@ export default function RyanAgntDrawer({ isOpen, onClose }: RyanAgntDrawerProps)
               </div>
             )}
 
-            {messages.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
+            {messages.map((msg, idx) => {
+              // skip the empty assistant placeholder until content/trace/chart streams in
+              if (msg.role === 'assistant' && !msg.content && !msg.chart && !(msg.trace && msg.trace.length)) return null;
+              return (
+              <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div
-                  className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
+                  className={`max-w-[90%] rounded-xl px-3 py-2 text-sm ${
                     msg.role === 'user'
                       ? 'bg-gradient-to-r from-cyan-500/20 to-fuchsia-500/20 border border-cyan-500/30'
                       : msg.meta?.blocked
-                      ? 'bg-red-900/20 border border-red-800/50'
-                      : msg.trace && Array.isArray(msg.trace) && msg.trace.length > 0 && (!msg.skills_confirmed || msg.skills_confirmed.length === 0)
-                      ? 'bg-slate-800/40 border border-slate-700/50 italic'
-                      : 'bg-slate-800/60 border border-slate-700'
+                        ? 'bg-red-900/20 border border-red-800/50'
+                        : isTraceOnly(msg)
+                          ? 'bg-slate-800/40 border border-slate-700/50'
+                          : 'bg-slate-800/60 border border-slate-700'
                   }`}
                 >
-                  <p className={`whitespace-pre-wrap ${
-                    msg.trace && Array.isArray(msg.trace) && msg.trace.length > 0 && (!msg.skills_confirmed || msg.skills_confirmed.length === 0)
-                      ? 'text-slate-400 text-xs'
-                      : 'text-slate-100'
-                  }`}>{msg.content}</p>
-
-                  {msg.skills_confirmed && msg.skills_confirmed.length > 0 && (
-                    <div className="mt-2 pt-2 border-t border-slate-700">
-                      <p className="text-xs font-medium text-slate-400 mb-1.5">Skills:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {msg.skills_confirmed.map((skill, i) => (
-                          <span
-                            key={i}
-                            className="text-xs px-1.5 py-0.5 rounded bg-slate-700/50 text-slate-300"
-                          >
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
+                  {/* trace lines (search narration) */}
+                  {msg.trace && msg.trace.length > 0 && (
+                    <div className="space-y-0.5 mb-1">
+                      {msg.trace.map((t, i) => (
+                        <p key={i} className="text-[11px] text-slate-400 italic">{t}</p>
+                      ))}
                     </div>
+                  )}
+
+                  {msg.content && <p className="whitespace-pre-wrap text-slate-100">{msg.content}</p>}
+
+                  {msg.chart && (
+                    <Suspense fallback={<p className="text-xs text-slate-400 mt-1">Rendering chart…</p>}>
+                      <RyAgentChart spec={msg.chart.spec} rows={msg.chart.rows} />
+                    </Suspense>
                   )}
 
                   {msg.evidence_links && msg.evidence_links.length > 0 && (
@@ -384,50 +364,64 @@ export default function RyanAgntDrawer({ isOpen, onClose }: RyanAgntDrawerProps)
                       <p className="text-xs font-medium text-slate-400 mb-1.5">Evidence:</p>
                       <div className="space-y-1">
                         {msg.evidence_links.map((link, i) => (
-                          <a
-                            key={i}
-                            href={link.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block text-xs text-cyan-400 hover:text-cyan-300 underline truncate"
-                          >
+                          <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className="block text-xs text-cyan-400 hover:text-cyan-300 underline truncate">
                             {link.title} →
                           </a>
                         ))}
                       </div>
                     </div>
                   )}
-
-                  {msg.missing_info && msg.missing_info.length > 0 && (
-                    <div className="mt-2 pt-2 border-t border-slate-700">
-                      <p className="text-xs font-medium text-slate-500 mb-1">Not evidenced:</p>
-                      <ul className="text-xs text-slate-500 space-y-0.5">
-                        {msg.missing_info.map((info, i) => (
-                          <li key={i} className="list-disc list-inside">{info}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
                 </div>
               </div>
-            ))}
+              );
+            })}
 
-            {loading && (
-              <SmartThinking 
-                isActive={true} 
-                isMadison={messages.length > 0 && messages[messages.length - 1]?.role === 'user' && messages[messages.length - 1]?.content.toLowerCase().includes('madison')}
-                isFastPath={false}
-              />
-            )}
-
-            {error && (
-              <div className="bg-red-900/20 border border-red-800 rounded-xl px-3 py-2 text-red-300 text-xs">
-                {error}
-              </div>
-            )}
-
+            {error && <div className="bg-red-900/20 border border-red-800 rounded-xl px-3 py-2 text-red-300 text-xs">{error}</div>}
             <div ref={messagesEndRef} />
           </div>
+
+          {/* Viz composer (mortgage page) */}
+          {isMortgagePage && vizOpen && (
+            <div className="px-4 py-3 border-t border-slate-800 bg-slate-900/70">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-semibold text-slate-200">Build a visualization</p>
+                <button onClick={() => setVizOpen(false)} className="text-xs text-slate-400 hover:text-slate-200">Close</button>
+              </div>
+              <p className="text-[11px] text-slate-400 mb-2">Describe a chart, or pick a metric:</p>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {vizMetrics.slice(0, 6).map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => runViz({ mode: 'run', spec: { metricId: m.id } }, m.label)}
+                    disabled={loading}
+                    className="px-2 py-1 text-[11px] rounded-md border border-slate-700 hover:bg-slate-800 hover:border-cyan-500/40 transition-colors text-slate-300 disabled:opacity-50"
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={vizInput}
+                  onChange={(e) => setVizInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && vizInput.trim() && !loading) runViz({ mode: 'resolve', description: vizInput.trim() }, vizInput.trim());
+                  }}
+                  placeholder="e.g. delinquency rate over time"
+                  className="flex-1 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 text-sm"
+                  disabled={loading}
+                />
+                <button
+                  onClick={() => vizInput.trim() && runViz({ mode: 'resolve', description: vizInput.trim() }, vizInput.trim())}
+                  disabled={!vizInput.trim() || loading}
+                  className="px-3 py-2 rounded-lg bg-gradient-to-r from-cyan-400 to-fuchsia-500 text-slate-900 font-semibold text-sm disabled:opacity-50"
+                >
+                  Chart
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Input */}
           <div className="px-4 py-3 border-t border-slate-800 bg-slate-900/40">
@@ -436,7 +430,19 @@ export default function RyanAgntDrawer({ isOpen, onClose }: RyanAgntDrawerProps)
                 {lockedMessage} Visit the <a href="/contact" className="underline text-red-200 hover:text-red-100">contact section</a> for direct contact.
               </div>
             )}
-            
+
+            {isMortgagePage && !vizOpen && (
+              <button
+                onClick={() => {
+                  setVizOpen(true);
+                  if (vizMetrics.length === 0) loadVizMetrics();
+                }}
+                className="w-full mb-2 px-3 py-2 rounded-lg border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 transition-colors text-cyan-300 text-sm font-medium flex items-center justify-center gap-2"
+              >
+                <span>📊</span> Build a visualization with RyAgent
+              </button>
+            )}
+
             <div className="flex gap-2">
               <input
                 ref={inputRef}
@@ -444,22 +450,33 @@ export default function RyanAgntDrawer({ isOpen, onClose }: RyanAgntDrawerProps)
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder={isLocked ? "Chat is locked..." : "Ask about skills, projects..."}
+                placeholder={isLocked ? 'Chat is locked...' : 'Ask about skills, projects...'}
                 className="flex-1 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 text-sm"
                 disabled={loading || isLocked}
               />
               <button
-                onClick={handleSend}
+                onClick={() => handleSend()}
                 disabled={!input.trim() || loading || isLocked}
                 className="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-400 to-fuchsia-500 text-slate-900 font-semibold text-sm transition-all duration-200 hover:scale-[1.02] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 Send
               </button>
             </div>
-
           </div>
         </div>
       </div>
     </>
   );
+}
+
+function mergeEvidence(existing: { title: string; url: string }[] = [], incoming: { title: string; url: string }[] = []) {
+  const seen = new Set(existing.map((e) => e.url));
+  const merged = [...existing];
+  for (const e of incoming) {
+    if (e && e.url && !seen.has(e.url)) {
+      seen.add(e.url);
+      merged.push(e);
+    }
+  }
+  return merged.slice(0, 5);
 }

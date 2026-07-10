@@ -49,8 +49,13 @@ Smoke test endpoint to verify OpenAI API key works.
 }
 ```
 
-### POST `/api/ask`
-Portfolio Assistant endpoint for evidence-grounded Q&A.
+### POST `/api/chat`
+Streaming (SSE) Portfolio Assistant for evidence-grounded Q&A. The model calls a
+`search_portfolio` tool over the dbt marts and streams thinking/tool/text events.
+
+### POST `/api/visualize`
+Mortgage Portfolio Intelligence chart builder over the Fannie Mae warehouse
+(`list` | `run` | `resolve` modes). Powers "Build a visualization with RyAgent".
 
 **Request:**
 ```json
@@ -151,7 +156,9 @@ Access at `http://localhost:5173` (API routes won't work)
 /
 ├── api/
 │   ├── openai-smoke.ts    # Smoke test endpoint
-│   └── ask.ts             # Portfolio Assistant API
+│   ├── chat.ts            # Streaming Portfolio Assistant (SSE)
+│   ├── visualize.ts       # Mortgage viz builder
+│   └── lib/               # guardrails, retrieval, prompt, metric registries
 ├── data/
 │   ├── resume_canonical.json
 │   ├── skills_matrix.json
@@ -162,7 +169,8 @@ Access at `http://localhost:5173` (API routes won't work)
 │   └── EVIDENCE_GUIDE.md
 ├── src/
 │   ├── components/
-│   │   └── PortfolioAssistant.tsx
+│   │   ├── RyanAgntDrawer.tsx   # Chat drawer (SSE) + viz builder
+│   │   └── RyAgentChart.tsx     # recharts renderer
 │   └── App.tsx
 └── README.md
 ```
