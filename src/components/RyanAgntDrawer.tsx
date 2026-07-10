@@ -14,7 +14,27 @@ type Message = {
   /** "Take it further" refinement prompts shown under a rendered chart. */
   suggestions?: string[];
   suggestHint?: string;
+  /** Live "what I'm doing" label shown while a reply is still being produced. */
+  status?: string;
 };
+
+/** Understated animated indicator: three softly pulsing dots + a status line. */
+function ThinkingIndicator({ label }: { label?: string }) {
+  return (
+    <div className="flex items-center gap-2 py-0.5">
+      <span className="flex gap-1" aria-hidden>
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="w-1.5 h-1.5 rounded-full bg-cyan-400/90 animate-pulse"
+            style={{ animationDelay: `${i * 220}ms`, animationDuration: '1.1s' }}
+          />
+        ))}
+      </span>
+      <span className="text-[11px] italic text-slate-400">{label || 'Thinking…'}</span>
+    </div>
+  );
+}
 
 type MetricChip = { id: string; label: string; example: string; kind: 'trend' | 'breakdown'; hint?: string; followUps: string[] };
 
@@ -151,7 +171,7 @@ export default function RyanAgntDrawer({ isOpen, onClose, vizRequest = 0 }: Ryan
     setMessages((prev) => [
       ...prev,
       { role: 'user', content: question },
-      { role: 'assistant', content: '', evidence_links: [], trace: [] },
+      { role: 'assistant', content: '', evidence_links: [], trace: [], status: 'Thinking…' },
     ]);
 
     const history = messages.map((m) => ({ role: m.role, content: m.content }));
@@ -203,15 +223,26 @@ export default function RyanAgntDrawer({ isOpen, onClose, vizRequest = 0 }: Ryan
           } catch {
             continue;
           }
-          if (ev.type === 'tool_end') {
+          if (ev.type === 'thinking') {
+            patchLast(() => ({ status: 'Thinking…' }));
+          } else if (ev.type === 'tool_start') {
+            const label =
+              ev.name === 'build_visualization'
+                ? 'Building your visualization…'
+                : ev.name === 'search_portfolio'
+                  ? 'Searching the portfolio…'
+                  : 'Working…';
+            patchLast(() => ({ status: label }));
+          } else if (ev.type === 'tool_end') {
             patchLast((m) => ({
               trace: [...(m.trace || []), ev.summary],
               evidence_links: mergeEvidence(m.evidence_links, ev.evidence),
+              status: 'Composing an answer…',
             }));
           } else if (ev.type === 'chart') {
             patchLast(() => ({ chart: { spec: ev.chartSpec, rows: ev.rows } }));
           } else if (ev.type === 'text') {
-            patchLast((m) => ({ content: m.content + ev.content }));
+            patchLast((m) => ({ content: m.content + ev.content, status: undefined }));
           } else if (ev.type === 'done') {
             if (ev.meta?.locked_until) {
               setIsLocked(true);
@@ -267,7 +298,11 @@ export default function RyanAgntDrawer({ isOpen, onClose, vizRequest = 0 }: Ryan
     setLoading(true);
     setVizOpen(false);
     setVizInput('');
-    setMessages((prev) => [...prev, { role: 'user', content: userLabel }, { role: 'assistant', content: '', trace: [] }]);
+    setMessages((prev) => [
+      ...prev,
+      { role: 'user', content: userLabel },
+      { role: 'assistant', content: '', trace: [], status: 'Querying the Fannie Mae warehouse…' },
+    ]);
     try {
       const resp = await fetch('/api/visualize', {
         method: 'POST',
@@ -365,8 +400,10 @@ export default function RyanAgntDrawer({ isOpen, onClose, vizRequest = 0 }: Ryan
             )}
 
             {messages.map((msg, idx) => {
-              // skip the empty assistant placeholder until content/trace/chart streams in
-              if (msg.role === 'assistant' && !msg.content && !msg.chart && !(msg.trace && msg.trace.length)) return null;
+              // Is this the in-flight assistant reply that hasn't produced output yet?
+              const pending = msg.role === 'assistant' && loading && idx === messages.length - 1 && !msg.content && !msg.chart;
+              // skip the empty assistant placeholder until it's thinking or content/trace/chart streams in
+              if (msg.role === 'assistant' && !msg.content && !msg.chart && !(msg.trace && msg.trace.length) && !pending) return null;
               return (
               <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div
@@ -388,6 +425,8 @@ export default function RyanAgntDrawer({ isOpen, onClose, vizRequest = 0 }: Ryan
                       ))}
                     </div>
                   )}
+
+                  {pending && <ThinkingIndicator label={msg.status} />}
 
                   {msg.content && <p className="whitespace-pre-wrap text-slate-100">{msg.content}</p>}
 

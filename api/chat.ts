@@ -125,25 +125,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (intent === 'ACKNOWLEDGEMENT') {
       streamText(ACK_REPLY);
       send({ type: 'done', meta: { intent } });
-      recordTurn({ intent });
+      await recordTurn({ intent });
       return res.end();
     }
     if (intent === 'MADISON') {
       streamText(MADISON_REPLIES[Math.floor((Date.now() / 1000) % MADISON_REPLIES.length)]);
       send({ type: 'done', meta: { intent } });
-      recordTurn({ intent });
+      await recordTurn({ intent });
       return res.end();
     }
     if (intent === 'WORK_STYLE') {
       streamText(WORK_STYLE_REPLY);
       send({ type: 'done', meta: { intent } });
-      recordTurn({ intent });
+      await recordTurn({ intent });
       return res.end();
     }
     if (intent === 'PERSONAL') {
       streamText(PERSONAL_REPLY);
       send({ type: 'done', meta: { intent } });
-      recordTurn({ intent });
+      await recordTurn({ intent });
       return res.end();
     }
     if (intent === 'PAGE_CONTEXT') {
@@ -151,7 +151,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const detail = p.blurb ? ` — ${p.blurb}.` : '.';
       streamText(`You're on ${p.label}${detail} Ask me anything about it${p.mode === 'mortgage' ? ", or tell me a chart to build" : ''}.`);
       send({ type: 'done', meta: { intent } });
-      recordTurn({ intent });
+      await recordTurn({ intent });
       return res.end();
     }
 
@@ -165,7 +165,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         streamText("I can only help with Ryan's skills, projects, and data work. Ask about Power BI, Synapse, A/B testing, or his portfolio projects.");
       }
       send({ type: 'done', meta: { intent, blocked: true } });
-      recordTurn({ intent, blocked: true });
+      await recordTurn({ intent, blocked: true });
       return res.end();
     }
 
@@ -217,7 +217,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // No tool calls -> the model answered; we're done.
       if (finishReason !== 'tool_calls' || toolCalls.length === 0) {
         send({ type: 'done', meta: { intent, sources_used: sourcesUsed } });
-        recordTurn({ intent, sourcesUsed });
+        await recordTurn({ intent, sourcesUsed });
         return res.end();
       }
 
@@ -290,12 +290,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Exhausted tool turns without a final answer.
     streamText('I hit my reasoning limit — please try rephrasing, or visit the contact section.');
     send({ type: 'done', meta: { intent, sources_used: sourcesUsed, truncated: true } });
-    recordTurn({ intent, sourcesUsed, truncated: true });
+    await recordTurn({ intent, sourcesUsed, truncated: true });
     return res.end();
   } catch (err: any) {
     console.error('[API] /api/chat error:', err?.message ?? err);
     send({ type: 'error', message: 'RyAgent hit a snag. Please try again.' });
-    recordTurn({ error: err?.message ? String(err.message).slice(0, 500) : 'unknown error' });
+    await recordTurn({ error: err?.message ? String(err.message).slice(0, 500) : 'unknown error' });
     return res.end();
   }
 }

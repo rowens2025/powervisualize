@@ -25,10 +25,53 @@ export type ChatLogRow = {
   error?: string;
 };
 
-export function logChatTurn(pool: Pool, row: ChatLogRow): void {
-  // Fire-and-forget: never await in the request path, never throw.
-  void pool
-    .query(
+const CREATE_SQL = `
+CREATE TABLE IF NOT EXISTS public.ryagent_chat_log (
+  id            bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  session_id    text,
+  client_ip     text,
+  user_agent    text,
+  page_path     text,
+  page_slug     text,
+  page_type     text,
+  question      text,
+  answer        text,
+  intent        text,
+  sources_used  text[],
+  blocked       boolean NOT NULL DEFAULT false,
+  truncated     boolean NOT NULL DEFAULT false,
+  error         text
+);
+CREATE INDEX IF NOT EXISTS ryagent_chat_log_created_at_idx ON public.ryagent_chat_log (created_at DESC);
+`;
+
+// Memoize table creation per warm instance so the log works no matter which
+// database this deployment's DATABASE_URL points at. Reset on failure to retry.
+let ensured: Promise<void> | null = null;
+function ensureTable(pool: Pool): Promise<void> {
+  if (!ensured) {
+    ensured = pool
+      .query(CREATE_SQL)
+      .then(() => undefined)
+      .catch((err) => {
+        ensured = null;
+        throw err;
+      });
+  }
+  return ensured;
+}
+
+/**
+ * Persist one conversation turn. IMPORTANT: this MUST be awaited before the
+ * request ends — on serverless (Vercel), the instance can freeze the moment the
+ * response closes, so an un-awaited insert silently never runs. Errors are
+ * swallowed (returns rather than throws) so logging can't break a chat.
+ */
+export async function logChatTurn(pool: Pool, row: ChatLogRow): Promise<void> {
+  try {
+    await ensureTable(pool);
+    await pool.query(
       `insert into public.ryagent_chat_log
          (session_id, client_ip, user_agent, page_path, page_slug, page_type,
           question, answer, intent, sources_used, blocked, truncated, error)
@@ -48,8 +91,8 @@ export function logChatTurn(pool: Pool, row: ChatLogRow): void {
         !!row.truncated,
         row.error ?? null,
       ],
-    )
-    .catch((err: any) => {
-      console.error('[chatlog] insert failed (non-fatal):', err?.message ?? err);
-    });
+    );
+  } catch (err: any) {
+    console.error('[chatlog] insert failed (non-fatal):', err?.message ?? err);
+  }
 }

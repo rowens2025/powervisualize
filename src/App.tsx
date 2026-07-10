@@ -1482,6 +1482,17 @@ function About() {
             <ul>
               <li>All-in on agentic workflows — Claude Code, custom MCP servers, and AI-assisted development woven into everyday data work</li>
               <li>Retrieval-Augmented Generation (RAG) over governed data, plus prompt, context, and token management</li>
+              <li>
+                Building governed semantic layers that AI can consume directly — so an agent can generate and reshape
+                data visualizations dynamically from plain language. It powers my{" "}
+                <a
+                  href="/data-projects/mortgage-portfolio-intelligence"
+                  className="underline decoration-cyan-500/60 hover:decoration-cyan-300"
+                >
+                  Mortgage Portfolio Intelligence
+                </a>{" "}
+                project, where RyAgent builds custom charts from a live warehouse on request.
+              </li>
             </ul>
 
             <p className="mt-6">
