@@ -1435,7 +1435,7 @@ function About() {
           </p>
 
           <p>
-            I’ve also been in the dbt world since the early days—around 2018, back when it was still Fishtown Analytics, a company that happened to be a few blocks from where I lived in Philly. It isn’t my day-to-day stack at the moment, but the analytics-engineering habits stuck: the way I build medallion pipelines in Python—modular transforms, real tests, and a governed semantic layer in Cube—comes straight from that same mindset.
+            I’ve also been using dbt since 2018—back when it was still Fishtown Analytics, my neighbors a few blocks over in Philly.
           </p>
 
           <p>
