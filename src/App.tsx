@@ -1391,7 +1391,6 @@ function TechBadges() {
     'Snowflake',
     'Azure',
     'Synapse',
-    'Databricks',
     'React',
   ];
   return (
