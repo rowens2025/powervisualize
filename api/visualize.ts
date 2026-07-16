@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
 import { listMortgageMetrics, listDimensions, MORTGAGE_METRICS, DEFAULT_LIMIT, type VizSpec } from './lib/mortgageMetrics.js';
-import { runMortgageChart } from './lib/runViz.js';
+import { runMortgageChart, listDimensionValues } from './lib/runViz.js';
 
 /**
  * Mortgage Portfolio Intelligence visualization endpoint — the engine behind
@@ -122,6 +122,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (mode === 'list' || !mode) {
       res.status(200).json({ metrics: listMortgageMetrics(), dimensions: listDimensions() });
+      return;
+    }
+
+    if (mode === 'values') {
+      const dimension = typeof req.body?.dimension === 'string' ? req.body.dimension : '';
+      if (!dimension) {
+        res.status(400).json({ error: 'Missing dimension' });
+        return;
+      }
+      const values = await listDimensionValues(dimension);
+      res.status(200).json({ dimension, values });
       return;
     }
 

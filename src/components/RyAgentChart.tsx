@@ -28,6 +28,8 @@ export type ChartSpec = {
   description: string;
   /** Optional accent color (named, e.g. "red", or a #hex). Defaults to cyan. */
   color?: string;
+  /** Optional fill opacity 0.1–1 (area/bar/pie). */
+  opacity?: number;
 };
 
 export type ChartRow = { category: string; value: number };
@@ -81,15 +83,20 @@ export default function RyAgentChart({ spec, rows }: { spec: ChartSpec; rows: Ch
   // Unique gradient id per tile so multiple area charts don't share one <defs>.
   const gradId = `rya_${(spec.metricId || 'x').replace(/[^a-z0-9_]/gi, '')}_${accent.replace('#', '')}`;
 
+  // Optional user-set fill opacity (area/bar/pie). Undefined = per-chart default.
+  const userOpacity = typeof spec.opacity === 'number' ? Math.max(0.1, Math.min(1, spec.opacity)) : null;
+
   // Per-category cell color: a chosen accent renders as monochrome shades
   // (via opacity) so pies/bars stay readable; otherwise use the default palette.
   const cellFill = (i: number): { fill: string; fillOpacity: number } => {
     if (hasCustomColor) {
       const step = rows.length > 1 ? (i / (rows.length - 1)) * 0.55 : 0;
-      return { fill: accent, fillOpacity: Math.max(0.4, 0.95 - step) };
+      return { fill: accent, fillOpacity: userOpacity ?? Math.max(0.4, 0.95 - step) };
     }
-    return { fill: PALETTE[i % PALETTE.length], fillOpacity: 1 };
+    return { fill: PALETTE[i % PALETTE.length], fillOpacity: userOpacity ?? 1 };
   };
+  // Area gradient peak opacity honors a user-set opacity when present.
+  const areaTop = userOpacity ?? 0.45;
 
   const tooltipStyle = {
     contentStyle: { background: '#0f172a', border: '1px solid #334155', borderRadius: 8, fontSize: 12 },
@@ -116,7 +123,7 @@ export default function RyAgentChart({ spec, rows }: { spec: ChartSpec; rows: Ch
             <AreaChart data={rows} margin={{ top: 8, right: 12, left: -8, bottom: 4 }}>
               <defs>
                 <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={accent} stopOpacity={0.45} />
+                  <stop offset="0%" stopColor={accent} stopOpacity={areaTop} />
                   <stop offset="100%" stopColor={accent} stopOpacity={0} />
                 </linearGradient>
               </defs>

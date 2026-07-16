@@ -31,11 +31,13 @@ export type MortgageMetric = {
   defaultChart: ChartType;
   example: string;
   usesLimit: boolean;
-  /** True for origination-book metrics that accept dimension filters. */
+  /** True for metrics that accept dimension filters. */
   filterable?: boolean;
+  /** Which dimensions this metric can be filtered/split by. */
+  allowedDims?: OrigDimension[];
   /** Static query (mutually exclusive with `build`). */
   sql?: string;
-  /** Dynamic query builder for filterable origination-book metrics. */
+  /** Dynamic query builder for filterable metrics. */
   build?: (resolved: ResolvedSpec) => { text: string; params: unknown[] };
 };
 
@@ -53,7 +55,11 @@ export type OrigDimension =
   | 'occupancy_status'
   | 'property_type'
   | 'channel'
-  | 'origination_year';
+  | 'origination_year'
+  | 'vintage_year';
+
+/** Dimensions available on the dim_loan origination book. */
+const ORIG_DIMS: OrigDimension[] = ['property_state', 'loan_purpose', 'occupancy_status', 'property_type', 'channel', 'origination_year'];
 
 type DimensionDef = {
   column: string;
@@ -86,6 +92,7 @@ export const ORIG_DIMENSIONS: Record<OrigDimension, DimensionDef> = {
     values: { R: 'Retail', C: 'Correspondent', B: 'Broker' },
   },
   origination_year: { column: 'origination_year', label: 'Origination year', numeric: true },
+  vintage_year: { column: 'vintage_year', label: 'Vintage year', numeric: true },
 };
 
 // Full US state name -> USPS code, so "California" resolves to CA (values are 2-letter in the data).
@@ -102,6 +109,21 @@ const STATE_NAME_TO_CODE: Record<string, string> = {
 };
 
 export type ResolvedFilter = { dimension: OrigDimension; column: string; value: string; numeric: boolean; label: string };
+
+/**
+ * Distinct-value sources for dimensions that aren't a fixed coded list — used to
+ * populate interactive dropdown filters. Coded dims (purpose, occupancy, …) come
+ * straight from ORIG_DIMENSIONS.values instead.
+ */
+export const DIM_VALUE_SOURCES: Partial<Record<OrigDimension, string>> = {
+  property_state: `select distinct property_state as v from ${S}.dim_loan where property_state is not null order by 1`,
+  origination_year: `select distinct origination_year::int as v from ${S}.dim_loan where origination_year is not null order by 1 desc`,
+  vintage_year: `select distinct vintage_year::int as v from ${S}.fct_vintage_monthly where vintage_year is not null order by 1 desc`,
+};
+
+export function dimensionValueSource(dimension: string): string | undefined {
+  return DIM_VALUE_SOURCES[dimension as OrigDimension];
+}
 
 /** Resolve a raw {dimension,value} to a bound code + display label, or null if invalid. */
 function resolveFilter(dimension: string, rawValue: unknown): ResolvedFilter | null {
@@ -174,13 +196,14 @@ function caseExpr(col: string, values: Record<string, string>): string {
   return `case ${col} ${whens} else ${col} end`;
 }
 
-function origMetric(cfg: OrigConfig): MortgageMetric {
+/** Generic filterable-metric builder over any table with a whitelisted dim set. */
+function filterableMetric(cfg: OrigConfig & { table: string; kind: MetricKind; allowedDims: OrigDimension[] }): MortgageMetric {
   const categoryExpr = cfg.categoryExpr ?? (cfg.values ? caseExpr(cfg.groupCol, cfg.values) : cfg.groupCol);
   return {
     id: cfg.id,
     label: cfg.label,
     description: cfg.description,
-    kind: 'breakdown',
+    kind: cfg.kind,
     categoryLabel: cfg.categoryLabel,
     measureLabel: cfg.measureLabel,
     unit: cfg.unit,
@@ -189,6 +212,7 @@ function origMetric(cfg: OrigConfig): MortgageMetric {
     example: cfg.example,
     usesLimit: !!cfg.usesLimit,
     filterable: true,
+    allowedDims: cfg.allowedDims,
     build: (resolved) => {
       const params: unknown[] = [];
       const wheres = [`${cfg.groupCol} is not null`];
@@ -199,7 +223,7 @@ function origMetric(cfg: OrigConfig): MortgageMetric {
       }
       let text =
         `select ${categoryExpr} as category, ${cfg.measureExpr} as value ` +
-        `from ${S}.dim_loan where ${wheres.join(' and ')} ` +
+        `from ${cfg.table} where ${wheres.join(' and ')} ` +
         `group by ${cfg.groupCol} order by ${cfg.order === 'value_desc' ? 'value desc' : cfg.groupCol}`;
       if (cfg.usesLimit) {
         params.push(resolved.limit);
@@ -210,87 +234,94 @@ function origMetric(cfg: OrigConfig): MortgageMetric {
   };
 }
 
+/** Origination-book breakdown over dim_loan, filterable by the dim_loan dimensions. */
+function origMetric(cfg: OrigConfig): MortgageMetric {
+  return filterableMetric({ ...cfg, table: `${S}.dim_loan`, kind: 'breakdown', allowedDims: ORIG_DIMS });
+}
+
+/** Monthly trend over fct_vintage_monthly, filterable/splittable by vintage_year. */
+function vintageTrend(cfg: {
+  id: string;
+  label: string;
+  description: string;
+  measureLabel: string;
+  unit: string;
+  measureExpr: string;
+  chartTypes?: ChartType[];
+  defaultChart?: ChartType;
+  example: string;
+}): MortgageMetric {
+  return filterableMetric({
+    id: cfg.id,
+    label: cfg.label,
+    description: cfg.description,
+    categoryLabel: 'Month',
+    measureLabel: cfg.measureLabel,
+    unit: cfg.unit,
+    chartTypes: cfg.chartTypes ?? ['line', 'area', 'bar'],
+    defaultChart: cfg.defaultChart ?? 'line',
+    example: cfg.example,
+    groupCol: 'reporting_month',
+    categoryExpr: `to_char(reporting_month,'YYYY-MM')`,
+    measureExpr: cfg.measureExpr,
+    order: 'category_asc',
+    table: `${S}.fct_vintage_monthly`,
+    kind: 'trend',
+    allowedDims: ['vintage_year'],
+  });
+}
+
 /* ------------------------------------------------------------------ */
 /* Metric catalog                                                     */
 /* ------------------------------------------------------------------ */
 
 export const MORTGAGE_METRICS: MortgageMetric[] = [
-  // --- monthly KPI trends (fct_portfolio_monthly_kpis, 2020-01..) ---
-  {
+  // --- monthly trends (fct_vintage_monthly) — all splittable by vintage_year ---
+  vintageTrend({
     id: 'delinquency_rate_30_plus_trend',
     label: '30+ day delinquency rate over time',
-    description: 'Share of active loans that are 30+ days delinquent, by month.',
-    kind: 'trend',
-    categoryLabel: 'Month',
+    description: 'Share of active loans 30+ days delinquent, by month. Filterable by vintage year.',
     measureLabel: 'Delinquency rate',
     unit: '%',
-    chartTypes: ['line', 'area', 'bar'],
-    defaultChart: 'line',
+    measureExpr: `round((sum(delinq_30plus_loan_records)::numeric / nullif(sum(active_loan_records),0))*100, 3)::float`,
     example: 'Show the 30+ day delinquency rate trend',
-    usesLimit: false,
-    sql: `select to_char(reporting_month,'YYYY-MM') as category, round(delinquency_rate_30_plus*100,3)::float as value
-          from ${S}.fct_portfolio_monthly_kpis order by reporting_month`,
-  },
-  {
+  }),
+  vintageTrend({
     id: 'delinquency_upb_rate_trend',
     label: '30+ delinquency rate by UPB over time',
-    description: 'Delinquent unpaid balance (30+) as a share of active UPB, by month.',
-    kind: 'trend',
-    categoryLabel: 'Month',
+    description: 'Delinquent unpaid balance (30+) as a share of active UPB, by month. Filterable by vintage year.',
     measureLabel: 'Delinquent UPB rate',
     unit: '%',
-    chartTypes: ['line', 'area', 'bar'],
-    defaultChart: 'line',
+    measureExpr: `round((sum(delinq_30plus_upb)::numeric / nullif(sum(active_upb),0))*100, 3)::float`,
     example: 'Delinquency rate weighted by balance over time',
-    usesLimit: false,
-    sql: `select to_char(reporting_month,'YYYY-MM') as category, round(delinquency_upb_rate_30_plus*100,3)::float as value
-          from ${S}.fct_portfolio_monthly_kpis order by reporting_month`,
-  },
-  {
+  }),
+  vintageTrend({
     id: 'active_loan_count_trend',
     label: 'Active loan count over time',
-    description: 'Total active loans (excludes zero-balance) by month.',
-    kind: 'trend',
-    categoryLabel: 'Month',
+    description: 'Total active loans by month. Filterable by vintage year.',
     measureLabel: 'Active loans',
     unit: '',
-    chartTypes: ['line', 'area', 'bar'],
-    defaultChart: 'line',
+    measureExpr: `sum(active_loan_records)::float`,
     example: 'How has the active loan count changed over time?',
-    usesLimit: false,
-    sql: `select to_char(reporting_month,'YYYY-MM') as category, active_loan_count::float as value
-          from ${S}.fct_portfolio_monthly_kpis order by reporting_month`,
-  },
-  {
+  }),
+  vintageTrend({
     id: 'active_upb_trend',
     label: 'Active UPB over time ($B)',
-    description: 'Total active unpaid principal balance, in billions of dollars, by month.',
-    kind: 'trend',
-    categoryLabel: 'Month',
+    description: 'Total active unpaid principal balance ($B) by month. Filterable by vintage year.',
     measureLabel: 'Active UPB',
     unit: '$B',
-    chartTypes: ['line', 'area', 'bar'],
-    defaultChart: 'line',
+    measureExpr: `round((sum(active_upb)/1e9)::numeric, 1)::float`,
     example: 'Show total active UPB over time',
-    usesLimit: false,
-    sql: `select to_char(reporting_month,'YYYY-MM') as category, round((active_upb/1e9)::numeric,1)::float as value
-          from ${S}.fct_portfolio_monthly_kpis order by reporting_month`,
-  },
-  {
+  }),
+  vintageTrend({
     id: 'delinq_loan_count_trend',
     label: '30+ delinquent loan count over time',
-    description: 'Number of loans 30+ days delinquent, by month.',
-    kind: 'trend',
-    categoryLabel: 'Month',
+    description: 'Number of loans 30+ days delinquent, by month. Filterable by vintage year.',
     measureLabel: 'Delinquent loans (30+)',
     unit: '',
-    chartTypes: ['line', 'area', 'bar'],
-    defaultChart: 'line',
+    measureExpr: `sum(delinq_30plus_loan_records)::float`,
     example: 'Trend of loans that are 30+ days delinquent',
-    usesLimit: false,
-    sql: `select to_char(reporting_month,'YYYY-MM') as category, delinq_30plus_loan_count::float as value
-          from ${S}.fct_portfolio_monthly_kpis order by reporting_month`,
-  },
+  }),
 
   // --- latest-month breakdowns ---
   {
@@ -604,6 +635,7 @@ export function listMortgageMetrics() {
   return MORTGAGE_METRICS.map(({ sql, build, ...rest }) => ({
     ...rest,
     filterable: !!rest.filterable,
+    allowedDims: rest.allowedDims ?? [],
     hint: METRIC_REFINEMENTS[rest.id]?.hint,
     followUps: METRIC_REFINEMENTS[rest.id]?.followUps ?? [],
   }));
@@ -637,6 +669,10 @@ export type VizSpec = {
   sort?: SortOrder;
   filters?: FilterInput[];
   color?: string;
+  /** Fill opacity 0.1–1 (area/bar/pie). */
+  opacity?: number;
+  /** Custom chart title override. */
+  title?: string;
 };
 export type ResolvedSpec = {
   metric: MortgageMetric;
@@ -647,10 +683,14 @@ export type ResolvedSpec = {
   excludeCategories: string[];
   includeCategories: string[];
   sort?: SortOrder;
-  /** Governed, validated dimension filters (origination-book metrics only). */
+  /** Governed, validated dimension filters (filterable metrics only). */
   filters: ResolvedFilter[];
   /** Validated accent color (name or #hex), or undefined for the default. */
   color?: string;
+  /** Validated fill opacity 0.1–1, or undefined for the default. */
+  opacity?: number;
+  /** Custom chart title override, or undefined to use the metric label. */
+  title?: string;
 };
 
 const MAX_KEYWORDS = 12;
@@ -685,18 +725,22 @@ export function resolveSpec(spec: VizSpec): { ok: true; resolved: ResolvedSpec }
   const includeCategories = normalizeKeywords(spec.includeCategories);
   const sort = spec.sort === 'asc' || spec.sort === 'desc' ? spec.sort : undefined;
 
-  // Filters only apply to filterable (origination-book) metrics; silently
-  // dropped for others so an out-of-scope ask degrades instead of erroring.
+  // Filters only apply to a metric's allowed dimensions; anything else is
+  // silently dropped so an out-of-scope ask degrades instead of erroring.
   const filters: ResolvedFilter[] = [];
-  if (metric.filterable && Array.isArray(spec.filters)) {
+  if (metric.filterable && metric.allowedDims && Array.isArray(spec.filters)) {
     for (const f of spec.filters.slice(0, MAX_FILTERS)) {
       if (!f || typeof f.dimension !== 'string') continue;
+      if (!metric.allowedDims.includes(f.dimension as OrigDimension)) continue;
       const resolved = resolveFilter(f.dimension, f.value);
       if (resolved) filters.push(resolved);
     }
   }
 
   const color = resolveColor(spec.color);
+  const opacity =
+    typeof spec.opacity === 'number' && Number.isFinite(spec.opacity) ? Math.max(0.1, Math.min(1, spec.opacity)) : undefined;
+  const title = typeof spec.title === 'string' && spec.title.trim() ? spec.title.trim().slice(0, 80) : undefined;
 
-  return { ok: true, resolved: { metric, chartType, limit, topN, excludeCategories, includeCategories, sort, filters, color } };
+  return { ok: true, resolved: { metric, chartType, limit, topN, excludeCategories, includeCategories, sort, filters, color, opacity, title } };
 }

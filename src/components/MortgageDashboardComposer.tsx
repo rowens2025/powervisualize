@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import type { ChartSpec, ChartRow, ChartType } from './RyAgentChart';
-import { NAMED_COLORS } from './RyAgentChart';
-import type { RunSpec, DashboardOp, TileContext } from './dashboardTypes';
+import type { RunSpec, DashboardOp, TileContext, TileSpan } from './dashboardTypes';
 import RyAgentDashboardBuilder from './RyAgentDashboardBuilder';
 
 // recharts is heavy — load the chart renderer on demand (same pattern as the drawer).
@@ -31,13 +30,20 @@ type CatalogMetric = {
   kind: 'trend' | 'breakdown';
   chartTypes: ChartType[];
   defaultChart: ChartType;
+  allowedDims: string[];
 };
 
-type SavedTile = { id: string; runSpec: RunSpec };
+type DimValue = { code: string; label: string };
+type DimensionDef = { key: string; label: string; numeric: boolean; values: DimValue[] | null };
+
+type SavedTile = { id: string; runSpec: RunSpec; span?: TileSpan; filterControls?: string[] };
 
 type TileState = {
   id: string;
   runSpec: RunSpec;
+  span: TileSpan;
+  /** Dimensions exposed as interactive dropdown filters on this tile. */
+  filterControls: string[];
   status: 'loading' | 'ready' | 'error';
   chartSpec?: ChartSpec;
   rows?: ChartRow[];
@@ -51,9 +57,6 @@ const CHART_TYPE_LABEL: Record<ChartType, string> = {
   horizontalBar: 'H-Bar',
   pie: 'Pie',
 };
-
-// Curated accent swatches for the per-tile color picker.
-const SWATCHES = ['cyan', 'blue', 'indigo', 'purple', 'pink', 'red', 'orange', 'green', 'teal'];
 
 // A sensible starter dashboard so the empty state is one click from something real.
 const QUICK_START: RunSpec[] = [
@@ -87,7 +90,7 @@ function loadSaved(): SavedTile[] {
     return parsed
       .filter((t) => t && t.runSpec && typeof t.runSpec.metricId === 'string')
       .slice(0, MAX_TILES)
-      .map((t, i) => ({ id: t.id || `t${i}_${Date.now()}`, runSpec: t.runSpec as RunSpec }));
+      .map((t, i) => ({ id: t.id || `t${i}_${Date.now()}`, runSpec: t.runSpec as RunSpec, span: t.span === 'full' ? 'full' : 'half' }));
   } catch {
     return [];
   }
@@ -111,25 +114,55 @@ function getSessionId(): string | undefined {
 
 export default function MortgageDashboardComposer() {
   const [catalog, setCatalog] = useState<CatalogMetric[]>([]);
+  const [dimensions, setDimensions] = useState<DimensionDef[]>([]);
+  const [dimValues, setDimValues] = useState<Record<string, DimValue[]>>({});
   const [catalogError, setCatalogError] = useState(false);
   const [tiles, setTiles] = useState<TileState[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [filterMenuFor, setFilterMenuFor] = useState<string | null>(null);
   const [builderOpen, setBuilderOpen] = useState(false);
   const [title, setTitle] = useState('My Mortgage Dashboard');
   const idCounter = useRef(0);
   const nextId = () => `tile_${Date.now()}_${idCounter.current++}`;
 
   const catalogById = useCallback((id: string) => catalog.find((m) => m.id === id), [catalog]);
+  const dimLabel = useCallback((key: string) => dimensions.find((d) => d.key === key)?.label ?? key, [dimensions]);
+
+  // Fetch (and cache) the selectable values for a dimension's dropdown.
+  const ensureDimValues = useCallback(
+    async (dimension: string) => {
+      if (dimValues[dimension]) return;
+      try {
+        const resp = await fetch('/api/visualize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode: 'values', dimension }),
+        });
+        const data = await resp.json();
+        setDimValues((prev) => ({ ...prev, [dimension]: Array.isArray(data.values) ? data.values : [] }));
+      } catch {
+        setDimValues((prev) => ({ ...prev, [dimension]: [] }));
+      }
+    },
+    [dimValues],
+  );
 
   // Persist the run specs (not the data) whenever tiles change.
   useEffect(() => {
     try {
-      const saved: SavedTile[] = tiles.map((t) => ({ id: t.id, runSpec: t.runSpec }));
+      const saved: SavedTile[] = tiles.map((t) => ({ id: t.id, runSpec: t.runSpec, span: t.span, filterControls: t.filterControls }));
       localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
     } catch {
       /* storage unavailable — dashboard just won't persist */
     }
   }, [tiles]);
+
+  // Make sure every active dropdown has its values loaded (restore + agent-added).
+  useEffect(() => {
+    const dims = new Set<string>();
+    tiles.forEach((t) => t.filterControls.forEach((d) => dims.add(d)));
+    dims.forEach((d) => ensureDimValues(d));
+  }, [tiles, ensureDimValues]);
 
   const patchTile = (id: string, patch: Partial<TileState>) => {
     setTiles((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
@@ -159,9 +192,18 @@ export default function MortgageDashboardComposer() {
           return;
         }
         setCatalog(data.metrics as CatalogMetric[]);
+        if (Array.isArray(data.dimensions)) setDimensions(data.dimensions as DimensionDef[]);
         const saved = loadSaved();
         if (saved.length > 0) {
-          setTiles(saved.map((t) => ({ ...t, status: 'loading' as const })));
+          setTiles(
+            saved.map((t) => ({
+              id: t.id,
+              runSpec: t.runSpec,
+              span: (t.span ?? 'half') as TileSpan,
+              filterControls: Array.isArray(t.filterControls) ? t.filterControls : [],
+              status: 'loading' as const,
+            })),
+          );
           saved.forEach((t) => fetchTile(t.id, t.runSpec));
         }
       } catch {
@@ -179,7 +221,7 @@ export default function MortgageDashboardComposer() {
     const ct = chartType && metric.chartTypes.includes(chartType) ? chartType : metric.defaultChart;
     const id = nextId();
     const spec: RunSpec = { metricId, chartType: ct };
-    setTiles((prev) => [...prev, { id, runSpec: spec, status: 'loading' }]);
+    setTiles((prev) => [...prev, { id, runSpec: spec, span: 'half', filterControls: [], status: 'loading' }]);
     setPickerOpen(false);
     fetchTile(id, spec);
   };
@@ -192,16 +234,38 @@ export default function MortgageDashboardComposer() {
     fetchTile(id, spec);
   };
 
-  // Color is display-only, so apply it locally (no DB refetch).
-  const changeColor = (id: string, color?: string) => {
+  const removeTile = (id: string) => setTiles((prev) => prev.filter((t) => t.id !== id));
+
+  // Expose a dimension as an interactive dropdown on a tile.
+  const addFilterControl = (id: string, dimension: string) => {
+    ensureDimValues(dimension);
     setTiles((prev) =>
-      prev.map((t) =>
-        t.id === id ? { ...t, runSpec: { ...t.runSpec, color }, chartSpec: t.chartSpec ? { ...t.chartSpec, color } : t.chartSpec } : t,
-      ),
+      prev.map((t) => (t.id === id && !t.filterControls.includes(dimension) ? { ...t, filterControls: [...t.filterControls, dimension] } : t)),
     );
+    setFilterMenuFor(null);
   };
 
-  const removeTile = (id: string) => setTiles((prev) => prev.filter((t) => t.id !== id));
+  // Remove a dropdown and drop its applied filter, then refetch.
+  const removeFilterControl = (id: string, dimension: string) => {
+    const tile = tiles.find((t) => t.id === id);
+    if (!tile) return;
+    const filters = (tile.runSpec.filters ?? []).filter((f) => f.dimension !== dimension);
+    const spec = { ...tile.runSpec, filters: filters.length ? filters : undefined };
+    setTiles((prev) => prev.map((t) => (t.id === id ? { ...t, filterControls: t.filterControls.filter((d) => d !== dimension), runSpec: spec } : t)));
+    fetchTile(id, spec);
+  };
+
+  // Apply a dropdown selection: '' clears that dimension's filter.
+  const setFilterValue = (id: string, dimension: string, value: string) => {
+    const tile = tiles.find((t) => t.id === id);
+    if (!tile) return;
+    const others = (tile.runSpec.filters ?? []).filter((f) => f.dimension !== dimension);
+    const filters = value ? [...others, { dimension, value }] : others;
+    const spec = { ...tile.runSpec, filters: filters.length ? filters : undefined };
+    setTiles((prev) => prev.map((t) => (t.id === id ? { ...t, runSpec: spec } : t)));
+    fetchTile(id, spec);
+  };
+
   const refreshAll = () => tiles.forEach((t) => fetchTile(t.id, t.runSpec));
   const clearAll = () => setTiles([]);
 
@@ -209,7 +273,7 @@ export default function MortgageDashboardComposer() {
     if (catalog.length === 0) return;
     const built: TileState[] = QUICK_START.filter((q) => catalogById(q.metricId))
       .slice(0, MAX_TILES)
-      .map((q) => ({ id: nextId(), runSpec: q, status: 'loading' as const }));
+      .map((q) => ({ id: nextId(), runSpec: q, span: 'half' as TileSpan, filterControls: [], status: 'loading' as const }));
     setTiles(built);
     built.forEach((t) => fetchTile(t.id, t.runSpec));
   };
@@ -219,7 +283,7 @@ export default function MortgageDashboardComposer() {
     if (op.op === 'add') {
       setTiles((prev) => {
         if (prev.length >= MAX_TILES) return prev;
-        return [...prev, { id: nextId(), runSpec: op.tile.runSpec, status: 'ready', chartSpec: op.tile.chartSpec, rows: op.tile.rows }];
+        return [...prev, { id: nextId(), runSpec: op.tile.runSpec, span: 'half', filterControls: [], status: 'ready', chartSpec: op.tile.chartSpec, rows: op.tile.rows }];
       });
     } else if (op.op === 'update') {
       setTiles((prev) => prev.map((t) => (t.id === op.tileId ? { ...t, runSpec: op.tile.runSpec, status: 'ready', chartSpec: op.tile.chartSpec, rows: op.tile.rows, error: undefined } : t)));
@@ -227,12 +291,46 @@ export default function MortgageDashboardComposer() {
       setTiles((prev) => prev.filter((t) => t.id !== op.tileId));
     } else if (op.op === 'clear') {
       setTiles([]);
+    } else if (op.op === 'set_title') {
+      setTitle(op.title.slice(0, 60));
+    } else if (op.op === 'organize') {
+      if (op.title) setTitle(op.title.slice(0, 60));
+      setTiles((prev) => {
+        const byId = new Map(prev.map((t) => [t.id, t]));
+        const ordered: TileState[] = [];
+        for (const item of op.layout) {
+          const t = byId.get(item.tileId);
+          if (t) {
+            ordered.push({ ...t, span: item.span === 'full' ? 'full' : 'half' });
+            byId.delete(item.tileId);
+          }
+        }
+        // Any tiles the layout didn't mention keep their place at the end.
+        for (const t of prev) if (byId.has(t.id)) ordered.push(t);
+        return ordered;
+      });
+    } else if (op.op === 'add_filter') {
+      ensureDimValues(op.dimension);
+      setTiles((prev) =>
+        prev.map((t) => (t.id === op.tileId && !t.filterControls.includes(op.dimension) ? { ...t, filterControls: [...t.filterControls, op.dimension] } : t)),
+      );
+    } else if (op.op === 'remove_filter') {
+      setTiles((prev) =>
+        prev.map((t) =>
+          t.id === op.tileId
+            ? { ...t, filterControls: t.filterControls.filter((d) => d !== op.dimension), runSpec: { ...t.runSpec, filters: (t.runSpec.filters ?? []).filter((f) => f.dimension !== op.dimension) } }
+            : t,
+        ),
+      );
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const tilesContext: TileContext[] = tiles.map((t) => ({
     tileId: t.id,
     label: t.chartSpec?.title || t.runSpec.metricId,
+    kind: t.chartSpec?.kind ?? catalogById(t.runSpec.metricId)?.kind,
+    span: t.span,
+    filterControls: t.filterControls,
     spec: t.runSpec,
   }));
 
@@ -348,7 +446,7 @@ export default function MortgageDashboardComposer() {
               const metric = catalogById(tile.runSpec.metricId);
               const allowedTypes = metric?.chartTypes ?? [];
               return (
-                <div key={tile.id} className="rounded-xl border border-slate-800 bg-slate-950/50 p-3">
+                <div key={tile.id} className={`rounded-xl border border-slate-800 bg-slate-950/50 p-3 ${tile.span === 'full' ? 'lg:col-span-2' : ''}`}>
                   <div className="flex items-center justify-between gap-2 mb-1">
                     <div className="flex flex-wrap gap-1">
                       {allowedTypes.map((ct) => (
@@ -372,26 +470,63 @@ export default function MortgageDashboardComposer() {
                     </button>
                   </div>
 
-                  {/* Color picker */}
-                  <div className="flex items-center gap-1 mb-1">
-                    {SWATCHES.map((c) => (
-                      <button
-                        key={c}
-                        onClick={() => changeColor(tile.id, c)}
-                        aria-label={`Color ${c}`}
-                        title={c}
-                        className={`w-4 h-4 rounded-full border ${tile.runSpec.color === c ? 'ring-2 ring-offset-1 ring-offset-slate-950 ring-white/70 border-white/40' : 'border-slate-600'}`}
-                        style={{ backgroundColor: NAMED_COLORS[c] }}
-                      />
-                    ))}
-                    <button
-                      onClick={() => changeColor(tile.id, undefined)}
-                      title="Default palette"
-                      className={`ml-1 px-1.5 py-0.5 text-[10px] rounded border ${!tile.runSpec.color ? 'border-cyan-500/60 bg-cyan-500/15 text-cyan-200' : 'border-slate-700 text-slate-400 hover:bg-slate-800'}`}
-                    >
-                      Auto
-                    </button>
-                  </div>
+                  {/* Interactive filter dropdowns */}
+                  {(() => {
+                    const metricDims = catalogById(tile.runSpec.metricId)?.allowedDims ?? [];
+                    const available = metricDims.filter((d) => !tile.filterControls.includes(d));
+                    if (tile.filterControls.length === 0 && metricDims.length === 0) return null;
+                    return (
+                      <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                        {tile.filterControls.map((dim) => {
+                          const current = tile.runSpec.filters?.find((f) => f.dimension === dim)?.value ?? '';
+                          const opts = dimValues[dim] ?? [];
+                          return (
+                            <div key={dim} className="flex items-center gap-1 rounded-md border border-slate-700 bg-slate-900/60 pl-2 pr-1 py-0.5">
+                              <span className="text-[10px] text-slate-400">{dimLabel(dim)}:</span>
+                              <select
+                                value={current}
+                                onChange={(e) => setFilterValue(tile.id, dim, e.target.value)}
+                                className="bg-slate-900 text-[11px] text-slate-200 focus:outline-none max-w-[9rem]"
+                              >
+                                <option value="">All</option>
+                                {opts.map((o) => (
+                                  <option key={o.code} value={o.code}>
+                                    {o.label}
+                                  </option>
+                                ))}
+                              </select>
+                              <button onClick={() => removeFilterControl(tile.id, dim)} aria-label={`Remove ${dimLabel(dim)} filter`} className="text-slate-500 hover:text-red-300 text-[11px] px-0.5">
+                                ✕
+                              </button>
+                            </div>
+                          );
+                        })}
+                        {available.length > 0 && (
+                          <div className="relative">
+                            <button
+                              onClick={() => setFilterMenuFor(filterMenuFor === tile.id ? null : tile.id)}
+                              className="text-[10px] px-2 py-1 rounded-md border border-slate-700 text-slate-400 hover:bg-slate-800 hover:border-cyan-500/40"
+                            >
+                              ＋ Filter
+                            </button>
+                            {filterMenuFor === tile.id && (
+                              <div className="absolute z-10 mt-1 rounded-md border border-slate-700 bg-slate-900 p-1 shadow-xl">
+                                {available.map((d) => (
+                                  <button
+                                    key={d}
+                                    onClick={() => addFilterControl(tile.id, d)}
+                                    className="block w-full text-left text-[11px] px-2 py-1 rounded text-slate-300 hover:bg-slate-800 whitespace-nowrap"
+                                  >
+                                    {dimLabel(d)}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {tile.status === 'loading' && (
                     <div className="h-[260px] grid place-items-center">

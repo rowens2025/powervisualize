@@ -3,7 +3,23 @@
  * and /api/chat (the agent's build_visualization tool). Read-only.
  */
 import { fanniePool } from './fannieDb.js';
-import { resolveSpec, type ChartType, type VizSpec } from './mortgageMetrics.js';
+import { resolveSpec, listDimensions, dimensionValueSource, type ChartType, type VizSpec } from './mortgageMetrics.js';
+
+/** Selectable values for a dimension, to populate an interactive dropdown filter. */
+export async function listDimensionValues(dimension: string): Promise<{ code: string; label: string }[]> {
+  const dimDef = listDimensions().find((d) => d.key === dimension);
+  if (!dimDef) return [];
+  if (dimDef.values) return dimDef.values; // coded dims: fixed list
+  const sql = dimensionValueSource(dimension);
+  if (!sql || !fanniePool) return [];
+  try {
+    const r = await fanniePool.query(sql);
+    return r.rows.map((x: any) => ({ code: String(x.v), label: String(x.v) }));
+  } catch (err: any) {
+    console.error('[viz] dimension values failed:', err?.message ?? err);
+    return [];
+  }
+}
 
 export type ChartRow = { category: string; value: number };
 
@@ -18,6 +34,8 @@ export type ChartSpec = {
   description: string;
   /** Optional accent color (name or #hex); undefined uses the default palette. */
   color?: string;
+  /** Optional fill opacity 0.1–1. */
+  opacity?: number;
 };
 
 export async function runMortgageChart(
@@ -106,7 +124,7 @@ export async function runMortgageChart(
 
   const chartSpec: ChartSpec = {
     metricId: metric.id,
-    title: metric.label,
+    title: resolution.resolved.title ?? metric.label,
     chartType,
     kind: metric.kind,
     categoryLabel: metric.categoryLabel,
@@ -114,6 +132,7 @@ export async function runMortgageChart(
     unit: metric.unit,
     description: metric.description,
     color: resolution.resolved.color,
+    opacity: resolution.resolved.opacity,
   };
   return { ok: true, chartSpec, rows };
 }
