@@ -4,6 +4,7 @@ import FloodMap from './components/flood-map/FloodMap';
 import KPICards from './components/flood-map/KPICards';
 import MapControls from './components/flood-map/MapControls';
 import RyanAgntWidget from './components/RyanAgntWidget';
+import MortgageDashboardComposer from './components/MortgageDashboardComposer';
 import type { ScenarioKPIs } from './components/flood-map/types';
 
 
@@ -1238,6 +1239,9 @@ function MortgageMartsProjectViewer({ onBack }: { onBack: () => void }) {
           </div>
         </div>
       </div>
+
+      {/* Build-your-own dashboard composer (governed, read-only semantic layer) */}
+      <MortgageDashboardComposer />
 
       {dashboardUrl ? (
         <>

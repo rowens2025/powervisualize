@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
-import { listMortgageMetrics, MORTGAGE_METRICS, DEFAULT_LIMIT, type VizSpec } from './lib/mortgageMetrics.js';
+import { listMortgageMetrics, listDimensions, MORTGAGE_METRICS, DEFAULT_LIMIT, type VizSpec } from './lib/mortgageMetrics.js';
 import { runMortgageChart } from './lib/runViz.js';
 
 /**
@@ -45,14 +45,22 @@ async function resolveDescription(description: string): Promise<VizSpec> {
   if (!apiKey) return fallback;
 
   const catalog = MORTGAGE_METRICS.map(
-    (m) => `- ${m.id}: ${m.label} — ${m.description} (charts: ${m.chartTypes.join('/')})`,
+    (m) => `- ${m.id}: ${m.label} — ${m.description} (charts: ${m.chartTypes.join('/')})${m.filterable ? ' [filterable]' : ''}`,
   ).join('\n');
 
+  const dimText = listDimensions()
+    .map((d) => `- ${d.key}: ${d.label}${d.values ? ` — one of ${d.values.map((v) => `${v.code}=${v.label}`).join(', ')}` : ' (numeric year, or a 2-letter state / full state name for property_state)'}`)
+    .join('\n');
+
   const system = `You map a user's request about a Fannie Mae mortgage portfolio to exactly one metric from a fixed catalog.
-Respond ONLY with JSON: {"metricId": string, "chartType": "line"|"area"|"bar"|"horizontalBar"|"pie", "limit": number}.
+Respond ONLY with JSON: {"metricId": string, "chartType": "line"|"area"|"bar"|"horizontalBar"|"pie", "limit": number, "filters": [{"dimension": string, "value": string}]}.
 - metricId MUST be one of the catalog ids. If nothing fits, pick the closest.
 - chartType MUST be one the chosen metric supports.
 - limit is top-N categories (3-25), default ${DEFAULT_LIMIT}; only matters for breakdowns.
+- filters: OPTIONAL, and ONLY valid for metrics marked [filterable]. Use them to slice by a dimension, e.g. "purchase loans by state" -> metricId loans_by_state, filters [{"dimension":"loan_purpose","value":"Purchase"}]. "originations in California" -> filters [{"dimension":"property_state","value":"CA"}]. Omit filters ([]) when the user didn't ask to slice.
+
+FILTER DIMENSIONS (for [filterable] metrics):
+${dimText}
 
 CATALOG:
 ${catalog}`;
@@ -71,7 +79,12 @@ ${catalog}`;
     });
     const parsed = JSON.parse(resp.choices[0]?.message?.content || '{}');
     if (parsed && typeof parsed.metricId === 'string') {
-      return { metricId: parsed.metricId, chartType: parsed.chartType, limit: typeof parsed.limit === 'number' ? parsed.limit : undefined };
+      return {
+        metricId: parsed.metricId,
+        chartType: parsed.chartType,
+        limit: typeof parsed.limit === 'number' ? parsed.limit : undefined,
+        filters: Array.isArray(parsed.filters) ? parsed.filters : undefined,
+      };
     }
   } catch {
     /* fall through */
@@ -108,7 +121,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const mode = req.body?.mode as string | undefined;
 
     if (mode === 'list' || !mode) {
-      res.status(200).json({ metrics: listMortgageMetrics() });
+      res.status(200).json({ metrics: listMortgageMetrics(), dimensions: listDimensions() });
       return;
     }
 

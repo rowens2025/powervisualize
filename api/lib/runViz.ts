@@ -16,6 +16,8 @@ export type ChartSpec = {
   measureLabel: string;
   unit: string;
   description: string;
+  /** Optional accent color (name or #hex); undefined uses the default palette. */
+  color?: string;
 };
 
 export async function runMortgageChart(
@@ -27,17 +29,23 @@ export async function runMortgageChart(
   if (!resolution.ok) return { ok: false, error: resolution.error };
 
   const { metric, chartType, limit, topN, excludeCategories, includeCategories, sort } = resolution.resolved;
-  const params = metric.usesLimit ? [limit] : [];
+
+  // Filterable origination-book metrics build their SQL (with bound filter
+  // params) dynamically; everything else is a static query with an optional
+  // limit param. Both paths are read-only and never interpolate user values.
+  const { text, params } = metric.build
+    ? metric.build(resolution.resolved)
+    : { text: metric.sql as string, params: metric.usesLimit ? [limit] : [] };
 
   // The Fannie compute can be cold (Neon suspends idle computes); the first
   // query may time out while it wakes. Retry once before giving up, and never
   // throw — return a graceful error the caller can surface instead of a 500.
   let result;
   try {
-    result = await fanniePool.query(metric.sql, params);
+    result = await fanniePool.query(text, params);
   } catch (err: any) {
     try {
-      result = await fanniePool.query(metric.sql, params);
+      result = await fanniePool.query(text, params);
     } catch (err2: any) {
       console.error('[viz] mortgage query failed:', err2?.message ?? err2);
       return { ok: false, error: 'The mortgage data source was slow to respond. Please try again in a moment.' };
@@ -105,6 +113,7 @@ export async function runMortgageChart(
     measureLabel: metric.measureLabel,
     unit: metric.unit,
     description: metric.description,
+    color: resolution.resolved.color,
   };
   return { ok: true, chartSpec, rows };
 }
