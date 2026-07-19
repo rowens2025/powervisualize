@@ -135,3 +135,55 @@ models:
           - not_null
           - accepted_values:
               values: ['published', 'draft']
+
+  # --- MLB sports marts (fed by the daily ESPN ingest) ---
+  - name: dim_team
+    description: "Dimension of MLB teams seen in the schedule (home or away)."
+    columns:
+      - name: team_abbr
+        description: "Team abbreviation — primary key."
+        tests: [not_null, unique]
+      - name: team_name
+        description: "Full team display name."
+        tests: [not_null]
+
+  - name: mart_team_season
+    description: "Season-to-date team standings and run totals. One row per team per season."
+    tests:
+      - unique:
+          column_name: "team_abbr || '-' || season"
+    columns:
+      - name: team_abbr
+        description: "FK to dim_team."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_team')
+              field: team_abbr
+      - name: season
+        tests: [not_null]
+      - name: wins
+        tests: [not_null]
+      - name: win_pct
+        description: "Season-to-date win percentage."
+        tests: [not_null]
+
+  - name: mart_team_standings_snapshot
+    description: "Daily point-in-time standings snapshot — one row per team/season/date. Materialized incrementally by the orchestrated Airflow + dbt pipeline; the basis for standings-over-time."
+    tests:
+      - unique:
+          column_name: "season || '-' || team_abbr || '-' || snapshot_date"
+    columns:
+      - name: snapshot_date
+        description: "Date this standings snapshot was captured (pipeline run date)."
+        tests: [not_null]
+      - name: season
+        tests: [not_null]
+      - name: team_abbr
+        description: "Team abbreviation."
+        tests: [not_null]
+      - name: wins
+        tests: [not_null]
+      - name: win_pct
+        description: "Season-to-date win percentage as of snapshot_date."
+        tests: [not_null]
