@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { runSportsQuery } from './lib/runSports.js';
-import { describeSportsLayer, SPORTS_METRICS } from './lib/sportsMetrics.js';
+import { runSportsQuery } from './_lib/runSports.js';
+import { describeSportsLayer, SPORTS_METRICS } from './_lib/sportsMetrics.js';
 
 /**
  * Remote MCP server for the MLB sports data source (Streamable HTTP transport,

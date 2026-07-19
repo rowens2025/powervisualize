@@ -1,10 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
 import { pool } from './_db.js';
-import { searchPortfolio } from './lib/retrieval.js';
-import { buildSystemPrompt, describePage, getTools } from './lib/ryPrompt.js';
-import { runMortgageChart, type ChartSpec, type ChartRow } from './lib/runViz.js';
-import { logChatTurn } from './lib/chatLog.js';
+import { searchPortfolio } from './_lib/retrieval.js';
+import { buildSystemPrompt, describePage, getTools } from './_lib/ryPrompt.js';
+import { runMortgageChart, type ChartSpec, type ChartRow } from './_lib/runViz.js';
+import { logChatTurn } from './_lib/chatLog.js';
 import {
   ACK_REPLY,
   MADISON_REPLIES,
@@ -18,7 +18,7 @@ import {
   rateLimit,
   type ChatMsg,
   type PageContext,
-} from './lib/guardrails.js';
+} from './_lib/guardrails.js';
 
 /**
  * Streaming RyAgent endpoint. Emits Server-Sent Events so the UI can show

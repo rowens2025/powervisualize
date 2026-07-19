@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { describeSportsLayer } from '../lib/sportsMetrics.js';
+import { describeSportsLayer } from '../_lib/sportsMetrics.js';
 
 /**
  * Sports semantic-layer meta endpoint — the plain-English "read me first" for

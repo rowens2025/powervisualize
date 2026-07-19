@@ -1,10 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
 import { pool } from './_db.js';
-import { runMortgageChart, type ChartSpec, type ChartRow } from './lib/runViz.js';
-import { MORTGAGE_METRICS, listDimensions, CHART_COLORS, type ChartType, type FilterInput } from './lib/mortgageMetrics.js';
-import { logChatTurn } from './lib/chatLog.js';
-import { rateLimit, checkContentModeration, type ChatMsg, type PageContext } from './lib/guardrails.js';
+import { runMortgageChart, type ChartSpec, type ChartRow } from './_lib/runViz.js';
+import { MORTGAGE_METRICS, listDimensions, CHART_COLORS, type ChartType, type FilterInput } from './_lib/mortgageMetrics.js';
+import { logChatTurn } from './_lib/chatLog.js';
+import { rateLimit, checkContentModeration, type ChatMsg, type PageContext } from './_lib/guardrails.js';
 
 /**
  * RyAgent Dashboard Builder — a focused, streaming agent that composes and edits

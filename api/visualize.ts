@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
-import { listMortgageMetrics, listDimensions, MORTGAGE_METRICS, DEFAULT_LIMIT, type VizSpec } from './lib/mortgageMetrics.js';
-import { runMortgageChart, listDimensionValues } from './lib/runViz.js';
+import { listMortgageMetrics, listDimensions, MORTGAGE_METRICS, DEFAULT_LIMIT, type VizSpec } from './_lib/mortgageMetrics.js';
+import { runMortgageChart, listDimensionValues } from './_lib/runViz.js';
 
 /**
  * Mortgage Portfolio Intelligence visualization endpoint — the engine behind

@@ -1,12 +1,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
 import { pool } from '../_db.js';
-import { runSportsQuery, type SportsRow } from '../lib/runSports.js';
-import { buildSportsStat, type SportsStatSpec, type BuiltSportsStat } from '../lib/sportsStats.js';
-import { SPORTS_METRICS, SPORTS_DIMENSIONS, type SportsChartType, type SportsChartSpec, type SportsQuery } from '../lib/sportsMetrics.js';
+import { runSportsQuery, type SportsRow } from '../_lib/runSports.js';
+import { buildSportsStat, type SportsStatSpec, type BuiltSportsStat } from '../_lib/sportsStats.js';
+import { SPORTS_METRICS, SPORTS_DIMENSIONS, type SportsChartType, type SportsChartSpec, type SportsQuery } from '../_lib/sportsMetrics.js';
 import { runSportsIngest } from '../sports-ingest.js';
-import { logChatTurn } from '../lib/chatLog.js';
-import { rateLimit, checkContentSafety, getClientIp, type ChatMsg, type PageContext } from '../lib/guardrails.js';
+import { logChatTurn } from '../_lib/chatLog.js';
+import { rateLimit, checkContentSafety, getClientIp, type ChatMsg, type PageContext } from '../_lib/guardrails.js';
 
 /**
  * RyAgent for the MLB sports page — one conversational agent that BOTH answers

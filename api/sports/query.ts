@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { runSportsQuery, listSportsDimensionValues, getSportsStatus } from '../lib/runSports.js';
-import { buildSportsStat, type SportsStatSpec } from '../lib/sportsStats.js';
-import type { SportsQuery } from '../lib/sportsMetrics.js';
+import { runSportsQuery, listSportsDimensionValues, getSportsStatus } from '../_lib/runSports.js';
+import { buildSportsStat, type SportsStatSpec } from '../_lib/sportsStats.js';
+import type { SportsQuery } from '../_lib/sportsMetrics.js';
 
 /**
  * Single governed sports query endpoint. The AI (or the dashboard) writes a

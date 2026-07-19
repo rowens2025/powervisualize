@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { SPORTS_METRICS, SPORTS_DIMENSIONS, SPORTS_CHART_TYPES } from '../lib/sportsMetrics.js';
+import { SPORTS_METRICS, SPORTS_DIMENSIONS, SPORTS_CHART_TYPES } from '../_lib/sportsMetrics.js';
 
 /**
  * OpenAPI 3.1 description of the MLB sports semantic-layer API, generated from
