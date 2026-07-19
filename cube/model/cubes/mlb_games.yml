@@ -1,0 +1,88 @@
+cubes:
+  - name: mlb_games
+    sql_table: analytics.fct_team_game
+    description: >
+      One row per team per regular-season MLB game (home and away legs unpivoted),
+      modeled by dbt from daily ESPN scores. Standings, run totals, and per-team
+      trends are all derived from here — Cube aggregates the measures on the fly.
+
+    dimensions:
+      - name: id
+        sql: "{CUBE}.event_id || '-' || {CUBE}.team_abbr"
+        type: string
+        primary_key: true
+
+      - name: team_abbr
+        sql: team_abbr
+        type: string
+        title: Team code
+
+      - name: team_name
+        sql: team_name
+        type: string
+        title: Team
+
+      - name: opponent_abbr
+        sql: opponent_abbr
+        type: string
+        title: Opponent
+
+      - name: season
+        sql: season
+        type: number
+
+      - name: game_date
+        sql: game_date
+        type: time
+
+      - name: is_home
+        sql: is_home
+        type: boolean
+        title: Home game
+
+      - name: won
+        sql: won
+        type: boolean
+
+    measures:
+      - name: games
+        type: count
+        description: Games played.
+
+      - name: wins
+        type: count
+        description: Games won.
+        filters:
+          - sql: "{CUBE}.won = true"
+
+      - name: losses
+        type: count
+        description: Games lost.
+        filters:
+          - sql: "{CUBE}.won = false"
+
+      - name: win_pct
+        sql: "1.0 * {wins} / nullif({games}, 0)"
+        type: number
+        format: percent
+        description: Share of games won.
+
+      - name: runs_for
+        sql: runs_for
+        type: sum
+        description: Total runs scored.
+
+      - name: runs_against
+        sql: runs_against
+        type: sum
+        description: Total runs allowed.
+
+      - name: run_diff
+        sql: "{runs_for} - {runs_against}"
+        type: number
+        description: Runs scored minus runs allowed.
+
+      - name: runs_for_per_game
+        sql: "1.0 * {runs_for} / nullif({games}, 0)"
+        type: number
+        description: Average runs scored per game.

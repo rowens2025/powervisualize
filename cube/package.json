@@ -1,0 +1,13 @@
+{
+  "name": "mlb-cube",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cube.js semantic layer over the MLB marts (portfolio Neon, analytics schema).",
+  "scripts": {
+    "dev": "cubejs-server"
+  },
+  "dependencies": {
+    "@cubejs-backend/postgres-driver": "^1.3.0",
+    "@cubejs-backend/server": "^1.3.0"
+  }
+}

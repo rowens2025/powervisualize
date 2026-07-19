@@ -1,0 +1,17 @@
+views:
+  - name: standings
+    description: Season standings and run totals per team — the curated public view.
+    cubes:
+      - join_path: mlb_games
+        includes:
+          - team_abbr
+          - team_name
+          - season
+          - games
+          - wins
+          - losses
+          - win_pct
+          - run_diff
+          - runs_for
+          - runs_against
+          - runs_for_per_game

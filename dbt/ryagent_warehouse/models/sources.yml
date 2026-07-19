@@ -16,3 +16,9 @@ sources:
       - name: objects
       - name: team_member_objects
       - name: project_objects
+
+  - name: sports
+    schema: public
+    description: "Raw daily MLB game scores landed from the ESPN public scoreboard feed."
+    tables:
+      - name: raw_sports_scores

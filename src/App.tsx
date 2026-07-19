@@ -5,6 +5,7 @@ import KPICards from './components/flood-map/KPICards';
 import MapControls from './components/flood-map/MapControls';
 import RyanAgntWidget from './components/RyanAgntWidget';
 import MortgageDashboardComposer from './components/MortgageDashboardComposer';
+import SportsDashboardStudio from './components/SportsDashboardStudio';
 import type { ScenarioKPIs } from './components/flood-map/types';
 
 
@@ -95,6 +96,11 @@ export default function App() {
   ];
 
   const dataProjects: DataProject[] = [
+    {
+      id: 'mlb-sports-analytics',
+      title: 'MLB Analytics: AI-Built Dashboards',
+      preview: '/dataprojects/mlb-sports/preview.svg',
+    },
     {
       id: 'mortgage-performance-marts',
       title: 'Mortgage Portfolio Intelligence',
@@ -445,6 +451,13 @@ export default function App() {
               />
             ) : openDataProject === 'mortgage-performance-marts' ? (
               <MortgageMartsProjectViewer
+                onBack={() => {
+                  setOpenDataProject(null);
+                  window.history.pushState({ route: 'data-projects' }, '', '/data-projects');
+                }}
+              />
+            ) : openDataProject === 'mlb-sports-analytics' ? (
+              <SportsProjectViewer
                 onBack={() => {
                   setOpenDataProject(null);
                   window.history.pushState({ route: 'data-projects' }, '', '/data-projects');
@@ -1283,6 +1296,119 @@ function MortgageMartsProjectViewer({ onBack }: { onBack: () => void }) {
         </div>
       )}
       <MortgageWarehouseDocsBelowDashboard dashboardUrl={dashboardUrl} />
+    </section>
+  );
+}
+
+function SportsProjectViewer({ onBack }: { onBack: () => void }) {
+  const introMax = 'max-w-3xl mx-auto px-1';
+  const [mcpCopied, setMcpCopied] = useState(false);
+  const mcpUrl = `${window.location.origin}/api/mcp`;
+
+  const copyMcpUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(mcpUrl);
+      setMcpCopied(true);
+      setTimeout(() => setMcpCopied(false), 2000);
+    } catch {
+      /* clipboard unavailable — the URL is visible to copy by hand */
+    }
+  };
+
+  return (
+    <section className="space-y-4 pt-7">
+      <div className="flex flex-wrap items-center gap-3 justify-between px-1">
+        <div className="flex flex-wrap items-center gap-3 min-w-0">
+          <button
+            onClick={onBack}
+            className="shrink-0 px-3 py-2 rounded-xl border border-slate-700 hover:bg-slate-800 transition-all duration-200 hover:translate-y-[-1px]"
+          >
+            Back
+          </button>
+          <h2 className="text-lg font-semibold truncate">MLB Analytics: AI-Built Dashboards</h2>
+        </div>
+        <a
+          href="/api/sports/docs"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 px-3 py-2 rounded-xl border border-slate-700 hover:bg-slate-800 text-sm text-slate-300 transition-all duration-200 hover:translate-y-[-1px]"
+        >
+          API reference ↗
+        </a>
+      </div>
+
+      <div className={introMax}>
+        <p className="text-slate-300 leading-relaxed text-sm sm:text-base">
+          A live sports warehouse, end to end: a Vercel cron pulls MLB scores from ESPN into Postgres (Neon) every
+          morning, dbt models them into team/game/season marts, and a governed semantic layer exposes curated metrics
+          through a single query endpoint (documented with OpenAPI). On top of it, RyAgent builds entire dashboards
+          from one sentence — and anyone can re-run the ingest job to pull the freshest games into the warehouse.
+        </p>
+      </div>
+
+      {/* RyAgent full-dashboard callout */}
+      <div className={introMax}>
+        <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-r from-cyan-500/10 to-fuchsia-500/10 p-4 sm:p-5">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl leading-none" aria-hidden>⚾</span>
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-base font-semibold text-slate-100">Ask RyAgent for a whole dashboard</h3>
+              <p className="mt-1 text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Try <span className="text-slate-200">“build me a complete standings dashboard”</span> and watch it
+                compose, lay out, and title one live — then keep going: <span className="text-slate-200">“make the wins
+                chart blue”</span>, <span className="text-slate-200">“who has the best run differential?”</span>, or
+                {' '}<span className="text-slate-200">“pull in the latest games”</span>. Every request maps to a curated,
+                read-only semantic layer — the agent never writes raw SQL.
+              </p>
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('sports:build-dashboard'))}
+                className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm bg-gradient-to-r from-cyan-400 to-fuchsia-500 text-slate-900 shadow-lg shadow-cyan-900/20 hover:opacity-95 transition-opacity"
+              >
+                <span aria-hidden>🤖</span> Build a dashboard with RyAgent
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* The live dashboard studio (status strip, grid, RyAgent panel) */}
+      <SportsDashboardStudio />
+
+      {/* MCP: connect this data source to the visitor's own Claude */}
+      <div className={introMax}>
+        <div className="rounded-2xl border border-violet-500/30 bg-gradient-to-r from-violet-500/10 to-cyan-500/10 p-4 sm:p-5">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl leading-none" aria-hidden>🔌</span>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm sm:text-base font-semibold text-slate-100">Connect this warehouse to your own Claude</h3>
+              <p className="mt-1 text-xs sm:text-sm text-slate-300 leading-relaxed">
+                This project ships a remote <span className="text-slate-200">MCP server</span> — add it to Claude as a
+                custom connector and your Claude can query the warehouse metrics directly <em>and</em> pull live
+                player box scores from today&apos;s games (player data that isn&apos;t even in the warehouse). Read-only by
+                construction: curated metrics and public live feeds, never raw SQL.
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <code className="px-3 py-1.5 rounded-lg bg-slate-950/70 border border-slate-700 text-[11px] sm:text-xs text-cyan-200 break-all">{mcpUrl}</code>
+                <button
+                  onClick={copyMcpUrl}
+                  className="px-3 py-1.5 text-xs rounded-lg border border-slate-700 hover:bg-slate-800 hover:border-cyan-500/40 text-slate-300"
+                >
+                  {mcpCopied ? '✓ Copied' : 'Copy URL'}
+                </button>
+              </div>
+              <ol className="mt-3 text-[11px] sm:text-xs text-slate-400 leading-relaxed list-decimal list-inside space-y-0.5">
+                <li>In Claude (desktop app or claude.ai): Settings → Connectors → <span className="text-slate-300">Add custom connector</span></li>
+                <li>Paste the URL above and add it — no login, no API key</li>
+                <li>Ask away: <span className="text-slate-300">“who leads MLB in run differential?”</span> or <span className="text-slate-300">“how did the Mets’ hitters do today?”</span></li>
+              </ol>
+              <p className="mt-2 text-[11px] text-slate-500">
+                Custom connectors require a paid Claude plan (Pro/Max/Team/Enterprise). On the free tier? The RyAgent
+                builder above does the same governed querying right on this page.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }

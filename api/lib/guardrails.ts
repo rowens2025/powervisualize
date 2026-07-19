@@ -78,11 +78,13 @@ export function addStrike(req: VercelRequest): { strikes: number; lockedUntil?: 
   return { strikes: entry.strikes, lockedUntil: entry.lockedUntil };
 }
 
-export function checkContentModeration(question: string): { allowed: boolean; reason?: string; severity?: 'strike' | 'warn' } {
+/**
+ * Safety-only moderation: explicit content and unambiguous hate/violence.
+ * No topic gating — use this for domain agents (e.g. the sports RyAgent) whose
+ * subject matter the career off-topic filter would wrongly block.
+ */
+export function checkContentSafety(question: string): { allowed: boolean; reason?: string; severity?: 'strike' | 'warn' } {
   const lower = question.toLowerCase();
-  if (lower.includes('madison larocca') || lower.includes('madison avery') || lower.includes('this is madison')) {
-    return { allowed: true };
-  }
 
   // Explicit sexual content only. Casual profanity ("this is shit", "fucking
   // cool") is NOT blocked — the assistant just replies professionally.
@@ -100,6 +102,18 @@ export function checkContentModeration(question: string): { allowed: boolean; re
     /\b(rape|raping|molest|murder someone)\b/i,
   ];
   for (const p of harassmentPatterns) if (p.test(lower)) return { allowed: false, reason: 'harassment', severity: 'strike' };
+
+  return { allowed: true };
+}
+
+export function checkContentModeration(question: string): { allowed: boolean; reason?: string; severity?: 'strike' | 'warn' } {
+  const lower = question.toLowerCase();
+  if (lower.includes('madison larocca') || lower.includes('madison avery') || lower.includes('this is madison')) {
+    return { allowed: true };
+  }
+
+  const safety = checkContentSafety(question);
+  if (!safety.allowed) return safety;
 
   const careerKeywords = [
     'skill', 'project', 'experience', 'ryan', 'power bi', 'python', 'sql', 'azure', 'synapse', 'data',
