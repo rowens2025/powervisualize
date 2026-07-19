@@ -1,6 +1,6 @@
 # PowerVisualize
 
-Portfolio site with evidence-grounded AI assistant powered by dbt (data build tool) marts and analytics engineering.
+Ryan Owens' data-engineering portfolio — cloud-scale pipelines, dimensional warehouses, and governed semantic layers — with an evidence-grounded AI assistant (RyAgent) powered by dbt (data build tool) marts and analytics engineering.
 
 ## Quickstart
 
@@ -60,7 +60,7 @@ Mortgage Portfolio Intelligence chart builder over the Fannie Mae warehouse
 **Request:**
 ```json
 {
-  "question": "Does Ryan have Power BI experience?",
+  "question": "What has Ryan built with dbt and Snowflake?",
   "history": [] // optional conversation history
 }
 ```
@@ -68,10 +68,10 @@ Mortgage Portfolio Intelligence chart builder over the Fannie Mae warehouse
 **Response:**
 ```json
 {
-  "answer": "Yes, Ryan is an expert...",
-  "skills_confirmed": ["Power BI", "DAX"],
+  "answer": "Ryan built a Snowflake warehouse from the ground up with 60+ dbt models...",
+  "skills_confirmed": ["dbt", "Snowflake", "Airflow", "PySpark"],
   "evidence_links": [
-    {"title": "Power BI Dashboards", "url": "https://..."}
+    {"title": "RyAgent Chatbot dbt Project", "url": "https://..."}
   ],
   "missing_info": []
 }
@@ -155,10 +155,12 @@ Access at `http://localhost:5173` (API routes won't work)
 ```
 /
 ├── api/
-│   ├── openai-smoke.ts    # Smoke test endpoint
 │   ├── chat.ts            # Streaming Portfolio Assistant (SSE)
 │   ├── visualize.ts       # Mortgage viz builder
-│   └── lib/               # guardrails, retrieval, prompt, metric registries
+│   ├── mcp.ts             # Remote MCP server (warehouse metrics + live sports tools)
+│   ├── sports/            # MLB sports analytics API (query, meta, chat, docs, openapi)
+│   ├── sports-ingest.ts   # Daily ESPN → warehouse ingest (Vercel cron)
+│   └── _lib/              # guardrails, retrieval, prompts, metric/semantic registries
 ├── data/
 │   ├── resume_canonical.json
 │   ├── skills_matrix.json

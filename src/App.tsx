@@ -1572,7 +1572,7 @@ function About() {
           </p>
 
           <p>
-            I’m Microsoft-first (Fabric, Synapse, Power BI, Azure), but I don’t get locked into tools—I ramp quickly and have delivered across modern stacks, including building a Snowflake warehouse from the ground up. Most of what I ship sits at the intersection of analytics and ML: trustworthy datasets, production-ready features, and model outputs that plug directly into decision workflows.
+            My roots are in the Microsoft and BI stack (Power BI, Fabric, Synapse, Azure)—that’s where the craft started—but I’ve grown well beyond any single toolset. I ramp quickly and deliver across modern stacks, including building a Snowflake warehouse from the ground up and engineering distributed pipelines in the cloud. Most of what I ship now sits at the intersection of data engineering, analytics, and ML: trustworthy datasets, production-ready features, and model outputs that plug directly into decision workflows.
           </p>
 
           <p>
@@ -1768,9 +1768,16 @@ function DashboardList({
         <div>
           <h2 className="text-2xl font-semibold">Dashboards</h2>
           <p className="text-slate-400 text-sm">
-            Showcasing a variety of compelling and interactive dashboards.
+            A variety of interactive dashboards — from business-intelligence reports to newer Power BI features like Python and Deneb visualizations.
             <br />
-            Ranging from business intelligence reports to displays of new PBI features like Python and Deneb visualizations and capabilities.
+            Several are early-career work (roughly four to seven years old), kept here to show where the journey began. My current core strengths live on the{" "}
+            <button
+              onClick={() => setRoute('data-projects')}
+              className="underline decoration-cyan-500/70 hover:decoration-cyan-300 text-cyan-300"
+            >
+              Data Projects
+            </button>{" "}
+            page.
           </p>
         </div>
       </div>
