@@ -53,3 +53,9 @@ dbt/**/logs/
 
 # Local dbt credentials (use dbt/profiles.yml.example as template)
 dbt/profiles.yml
+
+# Python (Airflow pipeline)
+__pycache__/
+*.pyc
+airflow/.venv/
+airflow/logs/

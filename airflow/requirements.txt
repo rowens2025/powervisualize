@@ -1,0 +1,7 @@
+# Airflow + task-runtime deps. In CI, Airflow is installed in its own virtualenv
+# and dbt (dbt-postgres) in a separate one, so their pins never collide — the DAG
+# shells out to the dbt CLI. See .github/workflows/mlb-airflow.yml.
+apache-airflow==2.10.5
+psycopg2-binary==2.9.10
+requests==2.32.3
+pendulum>=3.0,<4.0
