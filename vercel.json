@@ -38,7 +38,11 @@
       "destination": "/dbt-docs/$1"
     },
     {
-      "source": "/((?!@vite|@react-refresh|src/|node_modules/|api/|\\.well-known/|previews/|dataprojects/|maps/|dbt-docs/|PVFavicon.png|PVLogo.png|Me/).*)",
+      "source": "/r/:token",
+      "destination": "/api/r?token=:token"
+    },
+    {
+      "source": "/((?!@vite|@react-refresh|src/|node_modules/|api/|r/|\\.well-known/|previews/|dataprojects/|maps/|dbt-docs/|PVFavicon.png|PVLogo.png|Me/).*)",
       "destination": "/index.html"
     }
   ]
