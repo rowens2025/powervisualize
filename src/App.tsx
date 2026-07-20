@@ -746,17 +746,23 @@ function RyAgentProjectViewer({ onBack }: { onBack: () => void }) {
       {/* Main Description */}
       <div className={`${containerWidth} max-w-3xl`}>
         <p className="text-slate-300 leading-relaxed">
-          This project uses dbt-style analytics engineering to turn portfolio metadata into a governed warehouse layer that the chatbot can query deterministically. Raw tables (projects, pages, skills, and bridge tables) are modeled into a dedicated analytics schema using a layered approach: staging models normalize and type-clean source data, dimensional models define stable entities (projects/pages/skills), and marts/fact tables provide agent-friendly aggregates and denormalized views (e.g., project profiles and skill counts). dbt tests enforce correctness (unique keys, non-null constraints, relationship integrity, and accepted values), and dbt Docs produces an interactive lineage graph so the entire transformation pipeline is auditable end-to-end.
+          RyAgent isn&apos;t just a chatbot you ask questions—it&apos;s an AI you can <span className="text-slate-200">build
+          with</span>. On two live projects on this site, you describe what you want in plain English and RyAgent
+          constructs it in real time against a governed warehouse, streaming its reasoning, tool calls, and results
+          token-by-token.
         </p>
         <p className="text-slate-300 leading-relaxed mt-4">
-          RyAgent now answers as a streaming, tool-using agent: instead of pre-loading data, it calls a
-          <span className="text-slate-200"> search_portfolio</span> tool against the marts on demand and streams its
-          reasoning, evidence, and answer token-by-token. On data projects that have their own live warehouse—like
-          <span className="text-slate-200"> Mortgage Portfolio Intelligence</span> (a separate Fannie Mae Postgres
-          warehouse)—RyAgent can also <span className="text-slate-200">build custom visualizations on demand</span>:
-          you describe a chart in plain English, the agent maps it to a governed metric from a read-only semantic
-          layer, and a chart renders in the chat. The model only selects from an approved metric catalog, so it never
-          writes raw SQL—keeping the feature cheap, safe, and grounded in real numbers.
+          On <span className="text-slate-200">Mortgage Portfolio Intelligence</span>—a real Fannie Mae Postgres
+          warehouse—ask for a metric and a chart renders right in the chat, then reshapes as you keep talking: drop a
+          bucket, keep only the top&nbsp;N, switch to a line or pie. On <span className="text-slate-200">MLB
+          Analytics</span>—a live sports warehouse—describe a dashboard in one sentence and RyAgent composes the whole
+          thing: a KPI band, charts grouped into sections, layout, and title. Every request maps to a read-only
+          semantic layer, so the agent never writes raw SQL—interactions stay fast, safe, and grounded in real numbers.
+        </p>
+        <p className="text-slate-300 leading-relaxed mt-4">
+          Under all of it is analytics engineering: a dbt (data build tool) warehouse on Neon Postgres where staging,
+          dimensional, and mart models—with tests and documented lineage—drive what RyAgent surfaces and how it grounds
+          every answer. The schema and dbt lineage are below.
         </p>
       </div>
 
@@ -791,14 +797,14 @@ function RyAgentProjectViewer({ onBack }: { onBack: () => void }) {
             </p>
           </div>
           <div>
-            <h4 className="font-medium text-cyan-400 mb-2">Custom visualizations, on the fly</h4>
+            <h4 className="font-medium text-cyan-400 mb-2">Build with AI, on the fly</h4>
             <p className="text-slate-300 text-sm">
-              On data projects with a live warehouse (e.g., Mortgage Portfolio Intelligence), RyAgent turns a
-              plain-English request into a chart—and then keeps adjusting it as you talk. Ask it to drop a bucket,
-              show only certain categories, sort by size, switch to a bar or pie, or cap to the top&nbsp;N, and it
-              reshapes the visualization live. It maps every ask to a governed metric from a read-only semantic
-              layer, so the model never writes raw SQL—results stay accurate, cheap, and safe. It&apos;s a small
-              feature, but a genuinely fun one to try.
+              On projects with a live warehouse, RyAgent turns a plain-English request into real analytics—and keeps
+              adjusting as you talk. On <span className="text-slate-200">Mortgage Portfolio Intelligence</span> it builds
+              and reshapes a single chart (drop a bucket, keep certain categories, sort by size, switch to a bar or pie,
+              cap to the top&nbsp;N). On <span className="text-slate-200">MLB Analytics</span> it builds an entire
+              dashboard from one sentence—KPI tiles, sectioned charts, layout, and title. Every ask maps to a governed,
+              read-only semantic layer, so the model never writes raw SQL—results stay accurate, cheap, and safe.
             </p>
           </div>
         </div>
@@ -1300,6 +1306,100 @@ function MortgageMartsProjectViewer({ onBack }: { onBack: () => void }) {
   );
 }
 
+type PipelineRun = {
+  status?: string;
+  finished_at?: string;
+  rows_ingested?: number;
+  dbt_tests_passed?: number;
+  games_in_warehouse?: number;
+  snapshot_date?: string;
+};
+
+/** Provenance strip: the governed Airflow + dbt pipeline that feeds the warehouse.
+ *  Reads the committed last_run.json (static file — no serverless call). */
+function SportsPipelineStrip() {
+  const [run, setRun] = useState<PipelineRun | null>(null);
+  const repo = 'https://github.com/rowens2025/powervisualize';
+  const steps = ['Ingest · ESPN', 'dbt build', 'dbt test', 'Freshness', 'Publish'];
+
+  useEffect(() => {
+    let alive = true;
+    fetch('/pipeline/last_run.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => alive && d && setRun(d))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  return (
+    <div className="max-w-3xl mx-auto px-1">
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 sm:p-5">
+        <div className="flex items-start gap-3">
+          <span className="text-2xl leading-none" aria-hidden>🛠️</span>
+          <div className="min-w-0 flex-1">
+            <h3 className="text-sm sm:text-base font-semibold text-slate-100">How this data gets here</h3>
+            <p className="mt-1 text-xs sm:text-sm text-slate-300 leading-relaxed">
+              The warehouse is fed by a governed, orchestrated pipeline — a real <span className="text-slate-200">Apache
+              Airflow</span> DAG built with <span className="text-slate-200">dbt</span>, scheduled daily on GitHub
+              Actions (no always-on server). Each run extracts from ESPN, builds an incremental standings snapshot,
+              runs dbt tests as a quality gate, checks freshness, then publishes.
+            </p>
+
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              {steps.map((s, i) => (
+                <span key={s} className="flex items-center gap-1.5">
+                  <span className="px-2 py-1 text-[11px] rounded-md border border-slate-700 bg-slate-950/50 text-slate-300">{s}</span>
+                  {i < steps.length - 1 && <span className="text-slate-600" aria-hidden>→</span>}
+                </span>
+              ))}
+            </div>
+
+            {run && (
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-400 rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2">
+                <span className="flex items-center gap-1.5">
+                  <span className={`w-2 h-2 rounded-full ${run.status === 'success' ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                  <span className="text-slate-300">Last run {run.status ?? 'unknown'}</span>
+                </span>
+                {run.finished_at && <span>{new Date(run.finished_at).toLocaleString()}</span>}
+                {typeof run.dbt_tests_passed === 'number' && <span>{run.dbt_tests_passed} dbt tests passed</span>}
+                {typeof run.rows_ingested === 'number' && <span>{run.rows_ingested} games ingested</span>}
+                {typeof run.games_in_warehouse === 'number' && <span>{run.games_in_warehouse.toLocaleString()} in warehouse</span>}
+              </div>
+            )}
+
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <a
+                href={`${repo}/blob/main/airflow/dags/mlb_daily_pipeline.py`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 text-xs rounded-lg border border-slate-700 hover:bg-slate-800 hover:border-cyan-500/40 text-slate-300"
+              >
+                DAG source ↗
+              </a>
+              <a
+                href={`${repo}/actions/workflows/mlb-airflow.yml`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 text-xs rounded-lg border border-slate-700 hover:bg-slate-800 hover:border-cyan-500/40 text-slate-300"
+              >
+                GitHub Actions ↗
+              </a>
+              <img
+                src={`${repo}/actions/workflows/mlb-airflow.yml/badge.svg`}
+                alt="Pipeline CI status"
+                className="h-5"
+                loading="lazy"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SportsProjectViewer({ onBack }: { onBack: () => void }) {
   const introMax = 'max-w-3xl mx-auto px-1';
   const [mcpCopied, setMcpCopied] = useState(false);
@@ -1409,6 +1509,9 @@ function SportsProjectViewer({ onBack }: { onBack: () => void }) {
           </div>
         </div>
       </div>
+
+      {/* Pipeline provenance — the orchestrated Airflow + dbt layer, kept at the very bottom */}
+      <SportsPipelineStrip />
     </section>
   );
 }
