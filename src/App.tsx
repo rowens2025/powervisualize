@@ -1659,6 +1659,7 @@ function About() {
           </h1>
           <hr className="my-6 border-slate-700/70" />
 
+          <div className="space-y-4">
           <p>
             I'm Ryan Owens — a data engineer, analytics developer, and applied data scientist focused on building production-ready systems that power analytics, machine learning, and decision automation. I build scalable pipelines, reliable data products, and performant models—from ingestion and transformation through deployment, monitoring, and iteration.
           </p>
@@ -1689,6 +1690,7 @@ function About() {
           <p>
             I care deeply about operational excellence: CI/CD for data and analytics artifacts, versioned pipelines, automated testing/validation, and MLOps patterns that make model outputs repeatable, observable, and safe to ship.
           </p>
+          </div>
 
           <div className="mt-8 rounded-2xl border border-slate-800/80 bg-slate-900/20 p-6">
             <h3>Core Skill Set</h3>
