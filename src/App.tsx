@@ -1666,12 +1666,12 @@ function About() {
           <p>
             I’m agentic by default: I lean on AI and custom MCP tooling to move fast and automate the busy work, and I design data products with semantic layers that AI can consume and act on directly—{" "}
             <a
-              href="/data-projects/mortgage-portfolio-intelligence"
+              href="/data-projects/mlb-analytics-ai-built-dashboards"
               className="underline decoration-cyan-500/70 hover:decoration-cyan-300 text-cyan-300"
             >
               experience that live
             </a>{" "}
-            in my Mortgage Portfolio Intelligence project.
+            in my MLB Analytics project.
           </p>
 
           <p>
