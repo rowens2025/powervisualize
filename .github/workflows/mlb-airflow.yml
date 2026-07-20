@@ -1,0 +1,88 @@
+name: MLB pipeline (Airflow + dbt)
+
+# Runs the mlb_daily_pipeline DAG once a day via `airflow dags test` — a full,
+# in-process DAG run with no always-on Airflow server. Commits the run artifacts
+# (last_run.json + DAG graph) back so the portfolio's live "last run" card and
+# this workflow's status badge prove it ran.
+
+on:
+  schedule:
+    - cron: "0 12 * * *" # daily 12:00 UTC (after the 11:00 Vercel ingest)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write # commit the run artifacts back to the repo
+
+concurrency:
+  group: mlb-pipeline
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      AIRFLOW_HOME: ${{ github.workspace }}/.airflow_home
+      AIRFLOW__CORE__DAGS_FOLDER: ${{ github.workspace }}/airflow/dags
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      DBT_PROJECT_DIR: ${{ github.workspace }}/dbt/ryagent_warehouse
+      DBT_PROFILES_DIR: ${{ github.workspace }}/dbt
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check DATABASE_URL secret is set
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DATABASE_URL secret is not set (repo Settings → Secrets and variables → Actions)"
+            exit 1
+          fi
+
+      - name: Install dbt (isolated venv)
+        run: |
+          python -m venv .dbt-venv
+          ./.dbt-venv/bin/pip install -q --upgrade pip
+          ./.dbt-venv/bin/pip install -q "dbt-core==1.11.2" "dbt-postgres==1.10.0"
+
+      - name: Install Airflow + task deps (isolated venv)
+        run: |
+          python -m venv .airflow-venv
+          ./.airflow-venv/bin/pip install -q --upgrade pip
+          CONSTRAINTS="https://raw.githubusercontent.com/apache/airflow/constraints-2.10.5/constraints-3.11.txt"
+          ./.airflow-venv/bin/pip install -q "apache-airflow==2.10.5" requests psycopg2-binary --constraint "$CONSTRAINTS"
+
+      - name: Generate dbt profiles.yml from secret
+        run: python airflow/ci/gen_profiles.py
+
+      - name: Initialize Airflow metadata DB
+        run: ./.airflow-venv/bin/airflow db migrate
+
+      - name: Run the DAG (airflow dags test)
+        run: |
+          # The DAG shells out to `dbt` — put the dbt venv's binary on PATH.
+          export PATH="$GITHUB_WORKSPACE/.dbt-venv/bin:$PATH"
+          ./.airflow-venv/bin/airflow dags test mlb_daily_pipeline "$(date -u +%Y-%m-%d)"
+
+      - name: Render DAG graph (best-effort)
+        continue-on-error: true
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq graphviz
+          ./.airflow-venv/bin/pip install -q graphviz
+          ./.airflow-venv/bin/airflow dags show mlb_daily_pipeline --save public/pipeline/dag_graph.png
+
+      - name: Commit run artifacts
+        run: |
+          git config user.name "mlb-pipeline-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/pipeline/last_run.json public/pipeline/dag_graph.png 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "no artifact changes to commit"
+          else
+            git commit -m "chore(pipeline): daily MLB run $(date -u +%FT%TZ)"
+            git pull --rebase --autostash origin main || true
+            git push
+          fi
