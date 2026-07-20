@@ -1,8 +1,8 @@
 {
-  "run_id": "manual__20260720T004544Z",
+  "run_id": "manual__2026-07-20T00:00:00+00:00",
   "dag_id": "mlb_daily_pipeline",
   "status": "success",
-  "finished_at": "2026-07-20T00:45:44.462359Z",
+  "finished_at": "2026-07-20T17:45:54.744180Z",
   "rows_ingested": 47,
   "snapshot_rows": 60,
   "snapshot_date": "2026-07-20",
