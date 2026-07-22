@@ -135,6 +135,7 @@ HOW YOU WORK:
   * To SHOW two metrics side by side on one chart (bars + line, two axes), call add_combo_chart(metric, metric2). Great for "chart run differential and win % together" or validating one metric against another (e.g. Pythagorean win % vs actual win %).
   * To CREATE a new metric the catalog doesn't have by crunching two existing ones, call derive_metric(metric, metric2, op) — e.g. "runs per win" = runs_scored_by_team ÷ wins_by_team (op:"ratio"). Give it a clear title.
   * Both work only with the standings (breakdown) metrics, not trends. Pick the tool that fits: compare = combo, invent = derive.
+  * Keep two-metric charts to the TOP 10 teams by default — all 30 teams crowd the x-axis. Only pass a bigger limit if the visitor explicitly asks for more/all teams. If a chart looks too busy or the visitor says "clean it up" / "too many teams", call update_chart on that tileId with a smaller limit (e.g. 8-10); the two metrics are preserved automatically.
 - To change an EXISTING chart, call update_chart with the exact tileId from the list above. Visitors reference charts by what they show ("the wins chart").
 - Only touch the chart(s) the request is about. NEVER re-run or modify tiles the visitor didn't mention. When a request names ONE chart ("make the wins chart blue and show the top 5"), EVERY change in that request applies to that one chart — do not spread parts of it onto other tiles. Only call organize_dashboard when you just composed a full dashboard or the visitor asked to organize/clean up the layout — not after a single add or edit.
 - Filters: season (year) and team (code). team_cumulative_wins REQUIRES a team code. For "add a dropdown so I can pick the team/season myself", call add_filter_control(tileId, dimension).
@@ -233,7 +234,7 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
           metric: { type: 'string', enum: COMBINABLE_IDS, description: 'First metric — drawn as bars.' },
           metric2: { type: 'string', enum: COMBINABLE_IDS, description: 'Second metric — drawn as a line. Must differ from metric.' },
           sort: { type: 'string', enum: ['asc', 'desc'], description: 'Rank teams by the first metric.' },
-          limit: { type: 'number', description: 'Top-N teams (3-30).' },
+          limit: { type: 'number', description: 'Top-N teams (3-30). Defaults to 10 — keep it around 10 so the x-axis stays readable; only go higher if the visitor explicitly asks for more/all teams.' },
           season: { type: 'number', description: 'Season year. Omit for the latest.' },
           color: { type: 'string', enum: CHART_COLORS, description: 'Accent for the bars.' },
           title: { type: 'string', description: 'Custom chart title.' },
@@ -256,7 +257,7 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
           op: { type: 'string', enum: ['ratio', 'difference', 'sum', 'product'], description: 'ratio = metric ÷ metric2; difference = metric − metric2; etc.' },
           title: { type: 'string', description: 'Name for the new metric, e.g. "Runs per win". Recommended.' },
           sort: { type: 'string', enum: ['asc', 'desc'] },
-          limit: { type: 'number', description: 'Top-N teams (3-30).' },
+          limit: { type: 'number', description: 'Top-N teams (3-30). Defaults to 10 to keep the x-axis readable; only go higher if asked.' },
           season: { type: 'number', description: 'Season year. Omit for the latest.' },
           color: { type: 'string', enum: CHART_COLORS, description: 'Accent color.' },
         },
@@ -372,6 +373,10 @@ function toSpec(a: any, base?: SportsRunSpec): SportsRunSpec {
   spec.color = typeof a.color === 'string' ? a.color : base?.color;
   spec.opacity = num(a.opacity) ?? base?.opacity;
   spec.title = typeof a.title === 'string' ? a.title : base?.title;
+  // Preserve the combo/derive pairing so update_chart can tweak a two-metric tile
+  // (sort, limit, color, top-N) without silently collapsing it to one metric.
+  spec.metric2 = typeof a.metric2 === 'string' ? a.metric2 : base?.metric2;
+  spec.deriveOp = base?.deriveOp;
   return spec;
 }
 
@@ -577,7 +582,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             deriveOp: tc.name === 'derive_metric' && typeof args.op === 'string' ? (args.op as SportsDeriveOp) : undefined,
             season: num(args.season),
             sort: args.sort === 'asc' || args.sort === 'desc' ? args.sort : undefined,
-            limit: num(args.limit),
+            // Two-metric charts default to the top 10 so the axis stays readable.
+            limit: num(args.limit) ?? 10,
             color: typeof args.color === 'string' ? args.color : undefined,
             title: typeof args.title === 'string' ? args.title : undefined,
           };

@@ -73,7 +73,11 @@ const CHART_TYPE_LABEL: Record<Exclude<ChartType, 'combo'>, string> = {
   pie: 'Pie',
 };
 
-const DIM_LABEL: Record<string, string> = { season: 'Season', team: 'Team' };
+const DIM_LABEL: Record<string, string> = { season: 'Season', team: 'Team', topN: 'Top N' };
+// Synthetic "Top N teams" control — not a real dimension; it drives runSpec.limit
+// so a crowded breakdown (esp. a two-metric combo) can be trimmed on the fly.
+const TOP_N_OPTIONS = [5, 8, 10, 15, 20, 25, 30];
+const DEFAULT_TOP_N = 10;
 
 /** A designed starter dashboard: KPI band + grouped charts, one click from real. */
 type Starter =
@@ -235,7 +239,7 @@ export default function SportsDashboardStudio() {
   // Fetch (and cache) the selectable values for a dimension's dropdown.
   const ensureDimValues = useCallback(
     async (dimension: string) => {
-      if (dimValues[dimension]) return;
+      if (dimension === 'topN' || dimValues[dimension]) return; // topN is synthetic (no warehouse values)
       try {
         const resp = await fetch('/api/sports/query', {
           method: 'POST',
@@ -416,20 +420,21 @@ export default function SportsDashboardStudio() {
     if (!tile || tile.kind !== 'chart') return;
     // A required team stays put — the dropdown is how the visitor drives it.
     if (dimension === 'team' && catalogById(tile.runSpec.metric)?.requiresTeam) return;
-    const spec = { ...tile.runSpec, [dimension]: undefined } as SportsRunSpec;
+    // 'topN' maps to limit; every other control maps to its own spec field.
+    const spec = { ...tile.runSpec, [dimension === 'topN' ? 'limit' : dimension]: undefined } as SportsRunSpec;
     setTiles((prev) => prev.map((t) => (t.id === id && t.kind === 'chart' ? { ...t, filterControls: t.filterControls.filter((d) => d !== dimension), runSpec: spec } : t)));
     fetchChartTile(id, spec);
   };
 
-  // Apply a dropdown selection: '' clears (latest season / all teams).
+  // Apply a dropdown selection: '' clears (latest season / all teams / default top-N).
   const setFilterValue = (id: string, dimension: string, value: string) => {
     const tile = tiles.find((t) => t.id === id);
     if (!tile || tile.kind !== 'chart') return;
     if (dimension === 'team' && !value && catalogById(tile.runSpec.metric)?.requiresTeam) return;
-    const spec: SportsRunSpec = {
-      ...tile.runSpec,
-      [dimension]: value ? (dimension === 'season' ? Number(value) : value) : undefined,
-    };
+    const spec: SportsRunSpec =
+      dimension === 'topN'
+        ? { ...tile.runSpec, limit: value ? Number(value) : undefined }
+        : { ...tile.runSpec, [dimension]: value ? (dimension === 'season' ? Number(value) : value) : undefined };
     setTiles((prev) => prev.map((t) => (t.id === id && t.kind === 'chart' ? { ...t, runSpec: spec } : t)));
     fetchChartTile(id, spec);
   };
@@ -489,8 +494,12 @@ export default function SportsDashboardStudio() {
       setTiles((prev) => {
         if (prev.length >= MAX_TILES) return prev;
         const tile = op.tile as BuiltSportsTile;
+        // Two-metric charts (combo/derived) get a Top-N control by default and a
+        // sensible top-10 cap so the x-axis isn't crowded with all 30 teams.
+        const isTwoMetric = !!tile.runSpec.metric2;
+        const runSpec = isTwoMetric && tile.runSpec.limit == null ? { ...tile.runSpec, limit: DEFAULT_TOP_N } : tile.runSpec;
         // Adopt the server's tileId so a same-turn organize/update can target this tile.
-        return [...prev, { id: op.id ?? nextId(), kind: 'chart', runSpec: tile.runSpec, span: 'half', filterControls: [], status: 'ready', chartSpec: tile.chartSpec, rows: tile.rows }];
+        return [...prev, { id: op.id ?? nextId(), kind: 'chart', runSpec, span: 'half', filterControls: isTwoMetric ? ['topN'] : [], status: 'ready', chartSpec: tile.chartSpec, rows: tile.rows }];
       });
     } else if (op.op === 'add_stat') {
       setTiles((prev) => {
@@ -561,9 +570,12 @@ export default function SportsDashboardStudio() {
 
   const renderChartCard = (tile: ChartTile) => {
     const metric = catalogById(tile.runSpec.metric);
+    const isTwoMetric = !!tile.runSpec.metric2;
     const allowedTypes = (metric?.chartTypes ?? []).filter((ct): ct is Exclude<ChartType, 'combo'> => ct !== 'combo');
     const metricDims = metric?.dimensions ?? [];
-    const available = metricDims.filter((d) => !tile.filterControls.includes(d));
+    // Any breakdown chart can expose a "Top N teams" control to trim a crowded axis.
+    const dimChoices = [...metricDims, ...(metric?.kind === 'breakdown' ? ['topN'] : [])];
+    const available = dimChoices.filter((d) => !tile.filterControls.includes(d));
     return (
       <div key={tile.id} className={`group relative rounded-xl border border-slate-800 bg-slate-950/50 p-3.5 ${tile.span === 'full' ? 'lg:col-span-2' : ''}`}>
         <button
@@ -576,7 +588,7 @@ export default function SportsDashboardStudio() {
 
         {/* Controls — chart-type toggles recede until the card is hovered/focused.
             The chart's own title/description render below via RyAgentChart. */}
-        {allowedTypes.length > 1 && (
+        {allowedTypes.length > 1 && !isTwoMetric && (
           <div className="flex flex-wrap gap-1 mb-2 pr-7 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition">
             {allowedTypes.map((ct) => (
               <button
@@ -597,7 +609,12 @@ export default function SportsDashboardStudio() {
           <div className="flex flex-wrap items-center gap-1.5 mb-2">
             {tile.filterControls.map((dim) => {
               const isRequired = dim === 'team' && !!metric?.requiresTeam;
-              const current = dim === 'season' ? (tile.runSpec.season != null ? String(tile.runSpec.season) : '') : tile.runSpec.team ?? '';
+              const isTopN = dim === 'topN';
+              const current = isTopN
+                ? (tile.runSpec.limit != null ? String(tile.runSpec.limit) : '')
+                : dim === 'season'
+                  ? (tile.runSpec.season != null ? String(tile.runSpec.season) : '')
+                  : tile.runSpec.team ?? '';
               const opts = dimValues[dim] ?? [];
               return (
                 <div key={dim} className="flex items-center gap-1 rounded-md border border-slate-700 bg-slate-900/60 pl-2 pr-1 py-0.5">
@@ -607,12 +624,25 @@ export default function SportsDashboardStudio() {
                     onChange={(e) => setFilterValue(tile.id, dim, e.target.value)}
                     className="bg-slate-900 text-[11px] text-slate-200 focus:outline-none max-w-[10rem]"
                   >
-                    {!isRequired && <option value="">{dim === 'season' ? 'Latest' : 'All'}</option>}
-                    {opts.map((o) => (
-                      <option key={o.code} value={o.code}>
-                        {o.label}
-                      </option>
-                    ))}
+                    {isTopN ? (
+                      <>
+                        <option value="">All</option>
+                        {TOP_N_OPTIONS.map((n) => (
+                          <option key={n} value={n}>
+                            {n}
+                          </option>
+                        ))}
+                      </>
+                    ) : (
+                      <>
+                        {!isRequired && <option value="">{dim === 'season' ? 'Latest' : 'All'}</option>}
+                        {opts.map((o) => (
+                          <option key={o.code} value={o.code}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </>
+                    )}
                   </select>
                   {!isRequired && (
                     <button onClick={() => removeFilterControl(tile.id, dim)} aria-label={`Remove ${DIM_LABEL[dim] ?? dim} filter`} className="text-slate-500 hover:text-red-300 text-[11px] px-0.5">
