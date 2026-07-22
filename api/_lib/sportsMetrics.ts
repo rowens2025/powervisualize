@@ -44,6 +44,8 @@ export type SportsMetric = {
   dimensions: SportsDimension[];
   /** Whether `team` is required (per-team trends). */
   requiresTeam?: boolean;
+  /** Raw measure SQL over mart_team_season (breakdown metrics only) — enables combining two metrics into one chart. */
+  measureExpr?: string;
   example: string;
   build: (q: ResolvedSportsQuery) => { text: string; params: unknown[] };
 };
@@ -71,6 +73,7 @@ function standingBreakdown(cfg: {
     chartTypes: cfg.chartTypes ?? ['bar', 'horizontalBar'],
     defaultChart: cfg.defaultChart ?? 'bar',
     dimensions: ['season', 'team'],
+    measureExpr: cfg.measureExpr,
     example: cfg.example,
     build: (q) => {
       const params: unknown[] = [];
@@ -151,6 +154,16 @@ export const SPORTS_METRICS: SportsMetric[] = [
     measureExpr: 'runs_for_per_game',
     example: 'Average runs per game by team',
   }),
+  standingBreakdown({
+    id: 'pythag_win_pct_by_team',
+    label: 'Pythagorean win % by team',
+    description:
+      "Expected win % from runs scored & allowed (Bill James' Pythagorean expectation: RS² / (RS² + RA²)). Compare it to actual win % to spot teams over- or under-performing their run differential — a classic sanity check on the standings.",
+    measureLabel: 'Pythagorean win %',
+    unit: '',
+    measureExpr: 'round((power(runs_for, 2) / nullif(power(runs_for, 2) + power(runs_against, 2), 0))::numeric, 3)',
+    example: "Chart Pythagorean win % vs actual win % — who's lucky or unlucky?",
+  }),
   {
     id: 'team_cumulative_wins',
     label: 'Cumulative wins over the season (one team)',
@@ -188,13 +201,111 @@ export function getSportsMetric(id: string): SportsMetric | undefined {
 export type SportsChartSpec = {
   metricId: string;
   title: string;
-  chartType: SportsChartType;
+  chartType: SportsChartType | 'combo';
   kind: SportsKind;
   categoryLabel: string;
   measureLabel: string;
   unit: string;
   description: string;
+  /** Combo charts (two metrics on one chart) carry the secondary (line) metric here. */
+  secondaryMetricId?: string;
+  secondaryLabel?: string;
+  secondaryUnit?: string;
 };
+
+/** Resolve + validate two breakdown metrics for a combo chart, and build one query. */
+export function resolveSportsCombo(q: {
+  metricA: string;
+  metricB: string;
+  season?: number;
+  sort?: 'asc' | 'desc';
+  limit?: number;
+}): { ok: true; a: SportsMetric; b: SportsMetric; text: string; params: unknown[] } | { ok: false; error: string } {
+  const a = getSportsMetric(q.metricA);
+  const b = getSportsMetric(q.metricB);
+  if (!a || !b) return { ok: false, error: `Unknown metric in combo. Valid: ${SPORTS_METRICS.filter((m) => m.measureExpr).map((m) => m.id).join(', ')}.` };
+  if (!a.measureExpr || !b.measureExpr) {
+    return { ok: false, error: `A combo chart needs two standings (breakdown) metrics — trends like ${a.measureExpr ? b.id : a.id} can't be combined.` };
+  }
+  if (a.id === b.id) return { ok: false, error: 'A combo chart needs two DIFFERENT metrics.' };
+  const season = typeof q.season === 'number' && Number.isFinite(q.season) ? Math.round(q.season) : undefined;
+  let limit = typeof q.limit === 'number' && Number.isFinite(q.limit) ? Math.round(q.limit) : DEFAULT_LIMIT;
+  limit = Math.max(MIN_LIMIT, Math.min(MAX_LIMIT, limit));
+  const params: unknown[] = [];
+  const wheres: string[] = [];
+  if (typeof season === 'number') {
+    params.push(season);
+    wheres.push(`season = $${params.length}`);
+  } else {
+    wheres.push(`season = (select max(season) from ${S}.mart_team_season)`);
+  }
+  params.push(limit);
+  const text =
+    `select team_name as category, ${a.measureExpr} as value, ${b.measureExpr} as value2 ` +
+    `from ${S}.mart_team_season where ${wheres.join(' and ')} ` +
+    `order by value ${q.sort === 'asc' ? 'asc' : 'desc'} limit $${params.length}`;
+  return { ok: true, a, b, text, params };
+}
+
+/**
+ * On-the-fly derived metric: crunch two governed breakdown measures into a brand
+ * new one the catalog doesn't ship (e.g. runs scored per win). The AI only picks
+ * two metric ids + a whitelisted operator — the SQL is still ours, so it stays
+ * governed and injection-proof.
+ */
+export type SportsDeriveOp = 'ratio' | 'difference' | 'sum' | 'product';
+const DERIVE_OPS: Record<SportsDeriveOp, { verb: string; expr: (a: string, b: string) => string; round: boolean }> = {
+  ratio: { verb: 'per', expr: (a, b) => `(${a})::numeric / nullif((${b}), 0)`, round: true },
+  difference: { verb: 'minus', expr: (a, b) => `(${a}) - (${b})`, round: false },
+  sum: { verb: 'plus', expr: (a, b) => `(${a}) + (${b})`, round: false },
+  product: { verb: 'times', expr: (a, b) => `(${a}) * (${b})`, round: false },
+};
+
+export function resolveSportsDerived(q: {
+  metricA: string;
+  metricB: string;
+  op: string;
+  label?: string;
+  season?: number;
+  sort?: 'asc' | 'desc';
+  limit?: number;
+}):
+  | { ok: true; a: SportsMetric; b: SportsMetric; op: SportsDeriveOp; label: string; text: string; params: unknown[] }
+  | { ok: false; error: string } {
+  const a = getSportsMetric(q.metricA);
+  const b = getSportsMetric(q.metricB);
+  const breakdowns = SPORTS_METRICS.filter((m) => m.measureExpr).map((m) => m.id).join(', ');
+  if (!a || !b) return { ok: false, error: `Unknown metric in derive. Valid: ${breakdowns}.` };
+  if (!a.measureExpr || !b.measureExpr) {
+    return { ok: false, error: 'Deriving a metric needs two standings (breakdown) metrics — season trends can\'t be crunched together.' };
+  }
+  if (a.id === b.id) return { ok: false, error: 'Deriving a metric needs two DIFFERENT metrics.' };
+  const op = DERIVE_OPS[q.op as SportsDeriveOp] ? (q.op as SportsDeriveOp) : undefined;
+  if (!op) return { ok: false, error: `Unknown operator "${q.op}". Valid: ${Object.keys(DERIVE_OPS).join(', ')}.` };
+  const def = DERIVE_OPS[op];
+  const label = (q.label && q.label.trim().slice(0, 60)) || `${a.measureLabel} ${def.verb} ${b.measureLabel}`;
+
+  const season = typeof q.season === 'number' && Number.isFinite(q.season) ? Math.round(q.season) : undefined;
+  let limit = typeof q.limit === 'number' && Number.isFinite(q.limit) ? Math.round(q.limit) : DEFAULT_LIMIT;
+  limit = Math.max(MIN_LIMIT, Math.min(MAX_LIMIT, limit));
+
+  const raw = def.expr(a.measureExpr, b.measureExpr);
+  const measure = def.round ? `round((${raw})::numeric, 3)` : raw;
+  const params: unknown[] = [];
+  const wheres: string[] = [];
+  if (typeof season === 'number') {
+    params.push(season);
+    wheres.push(`season = $${params.length}`);
+  } else {
+    wheres.push(`season = (select max(season) from ${S}.mart_team_season)`);
+  }
+  params.push(limit);
+  const text =
+    `select team_name as category, ${measure} as value ` +
+    `from ${S}.mart_team_season where ${wheres.join(' and ')} ` +
+    `order by value ${q.sort === 'asc' ? 'asc' : 'desc'} limit $${params.length}`;
+  return { ok: true, a, b, op, label, text, params };
+}
 
 export type SportsQuery = {
   metric: string;

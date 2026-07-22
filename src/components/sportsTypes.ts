@@ -7,6 +7,9 @@ import type { TileSpan } from './dashboardTypes';
  * through the same RyAgentChart.
  */
 
+/** How to combine `metric` and `metric2` into one derived value per team. */
+export type SportsDeriveOp = 'ratio' | 'difference' | 'sum' | 'product';
+
 /** The governed run spec for one sports tile (mirrors the server SportsRunSpec). */
 export type SportsRunSpec = {
   metric: string;
@@ -18,6 +21,13 @@ export type SportsRunSpec = {
   color?: string;
   opacity?: number;
   title?: string;
+  /**
+   * Second metric. When set, this tile combines two metrics:
+   * - no `deriveOp` → a combo chart (bars + line on one chart).
+   * - with `deriveOp` → a new metric crunched on the fly (single value per team).
+   */
+  metric2?: string;
+  deriveOp?: SportsDeriveOp;
 };
 
 /** A fully built tile the client can drop straight into the grid. */

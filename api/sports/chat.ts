@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
 import { pool } from '../_db.js';
-import { runSportsQuery, type SportsRow } from '../_lib/runSports.js';
+import { runSportsQuery, runSportsCombo, runSportsDerived, type SportsRow } from '../_lib/runSports.js';
 import { buildSportsStat, type SportsStatSpec, type BuiltSportsStat } from '../_lib/sportsStats.js';
 import { SPORTS_METRICS, SPORTS_DIMENSIONS, type SportsChartType, type SportsChartSpec, type SportsQuery } from '../_lib/sportsMetrics.js';
 import { runSportsIngest } from '../sports-ingest.js';
@@ -26,16 +26,20 @@ const MAX_TILES = 8;
 const CHART_COLORS = ['cyan', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'red', 'orange', 'amber', 'green', 'emerald', 'teal', 'lime', 'slate'];
 
 /** The governed run spec for one sports tile (semantic-layer query + styling). */
+export type SportsDeriveOp = 'ratio' | 'difference' | 'sum' | 'product';
 export type SportsRunSpec = {
   metric: string;
   season?: number;
   team?: string;
   sort?: 'asc' | 'desc';
   limit?: number;
-  chartType?: SportsChartType;
+  chartType?: SportsChartType | 'combo';
   color?: string;
   opacity?: number;
   title?: string;
+  /** Second metric — combo chart (no deriveOp) or a new derived metric (with deriveOp). */
+  metric2?: string;
+  deriveOp?: SportsDeriveOp;
 };
 
 type TileContext = {
@@ -127,6 +131,10 @@ HOW YOU WORK:
   3. Call organize_dashboard: give every chart a span (hero "full", supporting "half") AND a short section label (e.g. "Standings", "Offense & pitching", "Team spotlight") to group them. Stats don't need a span — they always render as the top KPI band. Then set_dashboard_title.
   Don't ask permission first — build it, then offer to adjust.
 - KPI stats vs charts: a stat is ONE number (add_stat, breakdown metrics only — not trends). A chart is a full comparison (add_chart). Lead with stats, support with charts.
+- TWO METRICS AT ONCE:
+  * To SHOW two metrics side by side on one chart (bars + line, two axes), call add_combo_chart(metric, metric2). Great for "chart run differential and win % together" or validating one metric against another (e.g. Pythagorean win % vs actual win %).
+  * To CREATE a new metric the catalog doesn't have by crunching two existing ones, call derive_metric(metric, metric2, op) — e.g. "runs per win" = runs_scored_by_team ÷ wins_by_team (op:"ratio"). Give it a clear title.
+  * Both work only with the standings (breakdown) metrics, not trends. Pick the tool that fits: compare = combo, invent = derive.
 - To change an EXISTING chart, call update_chart with the exact tileId from the list above. Visitors reference charts by what they show ("the wins chart").
 - Only touch the chart(s) the request is about. NEVER re-run or modify tiles the visitor didn't mention. When a request names ONE chart ("make the wins chart blue and show the top 5"), EVERY change in that request applies to that one chart — do not spread parts of it onto other tiles. Only call organize_dashboard when you just composed a full dashboard or the visitor asked to organize/clean up the layout — not after a single add or edit.
 - Filters: season (year) and team (code). team_cumulative_wins REQUIRES a team code. For "add a dropdown so I can pick the team/season myself", call add_filter_control(tileId, dimension).
@@ -164,6 +172,9 @@ const STAT_PROPS = {
   sort: { type: 'string', enum: ['asc', 'desc'], description: 'Ranking direction — desc (default) leads with the highest, asc with the lowest (e.g. fewest runs allowed).' },
   label: { type: 'string', description: 'Short caption, e.g. "Best offense". Optional.' },
 } as const;
+
+// Metrics that can be combined/crunched (breakdown metrics with a raw measure).
+const COMBINABLE_IDS = SPORTS_METRICS.filter((m) => m.measureExpr).map((m) => m.id);
 
 const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   {
@@ -207,6 +218,49 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
         type: 'object',
         properties: { metric: { type: 'string', description: 'A metric id from the catalog.' }, ...FILTER_PROPS, ...STYLE_PROPS },
         required: ['metric'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'add_combo_chart',
+      description:
+        'Add ONE chart that shows TWO metrics together (bars for the first, a line for the second, on their own axes) so they can be compared at a glance — e.g. run differential vs win %, or Pythagorean win % vs actual win %. Both must be standings (breakdown) metrics.',
+      parameters: {
+        type: 'object',
+        properties: {
+          metric: { type: 'string', enum: COMBINABLE_IDS, description: 'First metric — drawn as bars.' },
+          metric2: { type: 'string', enum: COMBINABLE_IDS, description: 'Second metric — drawn as a line. Must differ from metric.' },
+          sort: { type: 'string', enum: ['asc', 'desc'], description: 'Rank teams by the first metric.' },
+          limit: { type: 'number', description: 'Top-N teams (3-30).' },
+          season: { type: 'number', description: 'Season year. Omit for the latest.' },
+          color: { type: 'string', enum: CHART_COLORS, description: 'Accent for the bars.' },
+          title: { type: 'string', description: 'Custom chart title.' },
+        },
+        required: ['metric', 'metric2'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'derive_metric',
+      description:
+        'Crunch TWO metrics into a BRAND-NEW metric on the fly (one value per team) that the catalog does not ship — e.g. runs scored ÷ wins ("runs per win"), or runs scored − runs allowed. Renders as a normal bar chart. Use this when the visitor wants a ratio/difference the catalog lacks; for showing two existing metrics side by side, use add_combo_chart instead.',
+      parameters: {
+        type: 'object',
+        properties: {
+          metric: { type: 'string', enum: COMBINABLE_IDS, description: 'First metric (the left side of the operation).' },
+          metric2: { type: 'string', enum: COMBINABLE_IDS, description: 'Second metric (the right side). Must differ from metric.' },
+          op: { type: 'string', enum: ['ratio', 'difference', 'sum', 'product'], description: 'ratio = metric ÷ metric2; difference = metric − metric2; etc.' },
+          title: { type: 'string', description: 'Name for the new metric, e.g. "Runs per win". Recommended.' },
+          sort: { type: 'string', enum: ['asc', 'desc'] },
+          limit: { type: 'number', description: 'Top-N teams (3-30).' },
+          season: { type: 'number', description: 'Season year. Omit for the latest.' },
+          color: { type: 'string', enum: CHART_COLORS, description: 'Accent color.' },
+        },
+        required: ['metric', 'metric2', 'op'],
       },
     },
   },
@@ -334,6 +388,18 @@ function toStatSpec(a: any, base?: SportsStatSpec): SportsStatSpec {
 
 /** Run a spec through the semantic layer and merge styling into the chart spec. */
 export async function buildSportsTile(spec: SportsRunSpec): Promise<{ ok: true; tile: BuiltTile } | { ok: false; error: string }> {
+  // Two-metric tiles: combine into one chart (combo) or crunch a new metric (derived).
+  if (spec.metric2) {
+    const out = spec.deriveOp
+      ? await runSportsDerived({ metricA: spec.metric, metricB: spec.metric2, op: spec.deriveOp, label: spec.title, season: spec.season, sort: spec.sort, limit: spec.limit })
+      : await runSportsCombo({ metricA: spec.metric, metricB: spec.metric2, season: spec.season, sort: spec.sort, limit: spec.limit });
+    if (!out.ok) return out;
+    const title = spec.title?.trim() || out.chartSpec.title;
+    const chartSpec = { ...out.chartSpec, title, color: spec.color, opacity: spec.opacity };
+    // Keep the tile's original run spec so filter dropdowns + re-fetch replay the combo/derive.
+    const runSpec: SportsRunSpec = { ...spec, chartType: chartSpec.chartType };
+    return { ok: true, tile: { runSpec, chartSpec, rows: out.rows } };
+  }
   const q: SportsQuery = { metric: spec.metric, season: spec.season, team: spec.team, sort: spec.sort, limit: spec.limit, chartType: spec.chartType };
   const out = await runSportsQuery(q);
   if (!out.ok) return out;
@@ -498,6 +564,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           } else {
             send({ type: 'tool_end', name: tc.name, summary: out.error });
             reply(`Could not add chart: ${out.error}`);
+          }
+        } else if (tc.name === 'add_combo_chart' || tc.name === 'derive_metric') {
+          if (tileMap.size >= MAX_TILES) {
+            reply(`Dashboard is full (${MAX_TILES} charts). Remove or update one instead.`);
+            continue;
+          }
+          const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
+          const spec: SportsRunSpec = {
+            metric: typeof args.metric === 'string' ? args.metric : '',
+            metric2: typeof args.metric2 === 'string' ? args.metric2 : undefined,
+            deriveOp: tc.name === 'derive_metric' && typeof args.op === 'string' ? (args.op as SportsDeriveOp) : undefined,
+            season: num(args.season),
+            sort: args.sort === 'asc' || args.sort === 'desc' ? args.sort : undefined,
+            limit: num(args.limit),
+            color: typeof args.color === 'string' ? args.color : undefined,
+            title: typeof args.title === 'string' ? args.title : undefined,
+          };
+          send({ type: 'tool_start', name: tc.name, query: `${spec.metric} + ${spec.metric2}` });
+          const out = await buildSportsTile(spec);
+          if (out.ok) {
+            const tempId = `srv_${turn}_${tc.id.slice(-6)}`;
+            tileMap.set(tempId, { tileId: tempId, kind: 'chart', label: out.tile.chartSpec.title, spec: out.tile.runSpec });
+            opsApplied.push(`${tc.name}:${spec.metric}+${spec.metric2}`);
+            send({ type: 'dashboard_op', op: { op: 'add', id: tempId, tile: out.tile } });
+            send({ type: 'tool_end', name: tc.name, summary: `Added “${out.tile.chartSpec.title}”.` });
+            reply(`Added chart "${out.tile.chartSpec.title}" (tileId ${tempId}, ${out.tile.rows.length} teams). It is now on the dashboard.`);
+          } else {
+            send({ type: 'tool_end', name: tc.name, summary: out.error });
+            reply(`Could not build that chart: ${out.error}`);
           }
         } else if (tc.name === 'add_stat') {
           if (tileMap.size >= MAX_TILES) {

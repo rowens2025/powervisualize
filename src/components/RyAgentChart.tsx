@@ -6,16 +6,18 @@ import {
   Area,
   BarChart,
   Bar,
+  ComposedChart,
   PieChart,
   Pie,
   Cell,
   XAxis,
   YAxis,
   Tooltip,
+  Legend,
   CartesianGrid,
 } from 'recharts';
 
-export type ChartType = 'line' | 'area' | 'bar' | 'horizontalBar' | 'pie';
+export type ChartType = 'line' | 'area' | 'bar' | 'horizontalBar' | 'pie' | 'combo';
 
 export type ChartSpec = {
   metricId: string;
@@ -30,9 +32,12 @@ export type ChartSpec = {
   color?: string;
   /** Optional fill opacity 0.1–1 (area/bar/pie). */
   opacity?: number;
+  /** Combo charts: the second metric drawn as a line on its own axis. */
+  secondaryLabel?: string;
+  secondaryUnit?: string;
 };
 
-export type ChartRow = { category: string; value: number };
+export type ChartRow = { category: string; value: number; value2?: number };
 
 /** Named accents the builder + color picker can choose from. */
 export const NAMED_COLORS: Record<string, string> = {
@@ -54,6 +59,9 @@ export const NAMED_COLORS: Record<string, string> = {
 };
 
 const DEFAULT_ACCENT = '#22d3ee';
+// Combo chart: bars use the tile accent; the second metric is a contrasting amber line.
+const COMBO_LINE_COLOR = '#f59e0b';
+const COMBO_LINE = 'Metric 2';
 // Multi-category default palette (used when no explicit color is chosen).
 const PALETTE = ['#22d3ee', '#a855f7', '#f472b6', '#38bdf8', '#818cf8', '#2dd4bf', '#fb923c', '#f43f5e'];
 
@@ -146,6 +154,22 @@ export default function RyAgentChart({ spec, rows }: { spec: ChartSpec; rows: Ch
                 })}
               </Bar>
             </BarChart>
+          ) : spec.chartType === 'combo' ? (
+            <ComposedChart data={rows} margin={{ top: 8, right: 6, left: -8, bottom: 4 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+              <XAxis dataKey="category" tick={{ fill: '#64748b', fontSize: 9 }} interval={0} tickLine={false} angle={-20} textAnchor="end" height={44} />
+              <YAxis yAxisId="left" tick={{ fill: '#64748b', fontSize: 9 }} tickLine={false} width={38} />
+              <YAxis yAxisId="right" orientation="right" tick={{ fill: '#64748b', fontSize: 9 }} tickLine={false} width={38} />
+              <Tooltip
+                contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 8, fontSize: 12 }}
+                labelStyle={{ color: '#e2e8f0' }}
+                cursor={{ fill: '#1e293b55' }}
+                formatter={(v: any, name: any) => [fmt(Number(v), name === COMBO_LINE ? spec.secondaryUnit ?? '' : spec.unit), name] as [string, string]}
+              />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Bar yAxisId="left" dataKey="value" name={spec.measureLabel} radius={[3, 3, 0, 0]} fill={accent} fillOpacity={userOpacity ?? 0.9} />
+              <Line yAxisId="right" type="monotone" dataKey="value2" name={spec.secondaryLabel ?? COMBO_LINE} stroke={COMBO_LINE_COLOR} strokeWidth={2} dot={{ r: 3, fill: COMBO_LINE_COLOR }} />
+            </ComposedChart>
           ) : spec.chartType === 'bar' ? (
             <BarChart data={rows} margin={{ top: 8, right: 12, left: -8, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />

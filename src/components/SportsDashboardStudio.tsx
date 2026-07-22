@@ -65,7 +65,7 @@ type TileState = ChartTile | StatTile;
 
 type DimValue = { code: string; label: string };
 
-const CHART_TYPE_LABEL: Record<ChartType, string> = {
+const CHART_TYPE_LABEL: Record<Exclude<ChartType, 'combo'>, string> = {
   line: 'Line',
   area: 'Area',
   bar: 'Bar',
@@ -100,10 +100,16 @@ function displayTitle(base: string, spec: SportsRunSpec): string {
 
 async function runSpec(spec: SportsRunSpec): Promise<{ ok: true; chartSpec: ChartSpec; rows: ChartRow[] } | { ok: false; error: string }> {
   try {
+    // Two-metric tiles: combine into one chart (combo) or crunch a new metric (derived).
+    const body = spec.metric2
+      ? spec.deriveOp
+        ? { mode: 'derived', metricA: spec.metric, metricB: spec.metric2, op: spec.deriveOp, label: spec.title, season: spec.season, sort: spec.sort, limit: spec.limit }
+        : { mode: 'combo', metricA: spec.metric, metricB: spec.metric2, season: spec.season, sort: spec.sort, limit: spec.limit }
+      : { metric: spec.metric, season: spec.season, team: spec.team, sort: spec.sort, limit: spec.limit, chartType: spec.chartType };
     const resp = await fetch('/api/sports/query', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ metric: spec.metric, season: spec.season, team: spec.team, sort: spec.sort, limit: spec.limit, chartType: spec.chartType }),
+      body: JSON.stringify(body),
     });
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok || !data.chartSpec) return { ok: false, error: data.error || 'Could not load this metric.' };
@@ -555,7 +561,7 @@ export default function SportsDashboardStudio() {
 
   const renderChartCard = (tile: ChartTile) => {
     const metric = catalogById(tile.runSpec.metric);
-    const allowedTypes = metric?.chartTypes ?? [];
+    const allowedTypes = (metric?.chartTypes ?? []).filter((ct): ct is Exclude<ChartType, 'combo'> => ct !== 'combo');
     const metricDims = metric?.dimensions ?? [];
     const available = metricDims.filter((d) => !tile.filterControls.includes(d));
     return (
@@ -746,8 +752,8 @@ export default function SportsDashboardStudio() {
             </div>
             <p className="mt-1 text-xs sm:text-sm text-slate-400 leading-relaxed max-w-2xl">
               Build an MLB dashboard on the fly — ask RyAgent for a whole dashboard in one sentence, reshape any tile
-              by chatting, or add tiles by hand. It saves in your browser and reads from a governed, read-only
-              semantic layer over the live warehouse (no raw SQL).
+              by chatting, or add tiles by hand. It saves in your browser, and every tile resolves through a governed
+              semantic layer — so the agent charts defined, trusted metrics instead of improvising queries.
             </p>
           </div>
           {tiles.length > 0 && (

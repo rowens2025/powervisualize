@@ -21,6 +21,7 @@ const SUGGESTIONS = [
   'Who has the best run differential?',
   'Chart the Dodgers’ wins over the season',
   'Pull in the latest games',
+  'Which teams are over- or underperforming? Chart Pythagorean vs actual win %',
 ];
 
 const TOOL_STATUS: Record<string, string> = {
@@ -28,6 +29,8 @@ const TOOL_STATUS: Record<string, string> = {
   add_stat: 'Adding a KPI…',
   update_stat: 'Updating a KPI…',
   add_chart: 'Adding a chart…',
+  add_combo_chart: 'Charting two metrics together…',
+  derive_metric: 'Crunching a new metric…',
   update_chart: 'Updating a chart…',
   refresh_data: 'Running the ingest job…',
 };

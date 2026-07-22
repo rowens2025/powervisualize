@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { runSportsQuery, listSportsDimensionValues, getSportsStatus } from '../_lib/runSports.js';
+import { runSportsQuery, runSportsCombo, runSportsDerived, listSportsDimensionValues, getSportsStatus } from '../_lib/runSports.js';
 import { buildSportsStat, type SportsStatSpec } from '../_lib/sportsStats.js';
 import type { SportsQuery } from '../_lib/sportsMetrics.js';
 
@@ -46,6 +46,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const dimension = typeof req.body?.dimension === 'string' ? req.body.dimension : '';
       if (!dimension) return res.status(400).json({ error: 'Missing dimension' });
       return res.status(200).json({ dimension, values: await listSportsDimensionValues(dimension) });
+    }
+
+    if (req.body?.mode === 'combo') {
+      const b = req.body;
+      if (typeof b.metricA !== 'string' || typeof b.metricB !== 'string') {
+        return res.status(400).json({ error: 'combo needs metricA and metricB (two breakdown metric ids).' });
+      }
+      const out = await runSportsCombo({ metricA: b.metricA, metricB: b.metricB, season: b.season, sort: b.sort, limit: b.limit });
+      if (!out.ok) return res.status(400).json({ error: out.error });
+      return res.status(200).json(out);
+    }
+
+    if (req.body?.mode === 'derived') {
+      const b = req.body;
+      if (typeof b.metricA !== 'string' || typeof b.metricB !== 'string' || typeof b.op !== 'string') {
+        return res.status(400).json({ error: 'derived needs metricA, metricB and op (ratio|difference|sum|product).' });
+      }
+      const out = await runSportsDerived({ metricA: b.metricA, metricB: b.metricB, op: b.op, label: b.label, season: b.season, sort: b.sort, limit: b.limit });
+      if (!out.ok) return res.status(400).json({ error: out.error });
+      return res.status(200).json(out);
     }
 
     if (req.body?.mode === 'stat') {

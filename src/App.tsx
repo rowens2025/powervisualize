@@ -1484,8 +1484,9 @@ function SportsProjectViewer({ onBack }: { onBack: () => void }) {
               <p className="mt-1 text-xs sm:text-sm text-slate-300 leading-relaxed">
                 This project ships a remote <span className="text-slate-200">MCP server</span> — add it to Claude as a
                 custom connector and your Claude can query the warehouse metrics directly <em>and</em> pull live
-                player box scores from today&apos;s games (player data that isn&apos;t even in the warehouse). Read-only by
-                construction: curated metrics and public live feeds, never raw SQL.
+                player box scores from today&apos;s games — player data that isn&apos;t in the warehouse, served straight
+                from ESPN through pre-modeled, semantic tools so the AI reads it right instead of guessing at raw feeds.
+                Read-only by construction: curated metrics and public live feeds, never raw SQL.
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <code className="px-3 py-1.5 rounded-lg bg-slate-950/70 border border-slate-700 text-[11px] sm:text-xs text-cyan-200 break-all">{mcpUrl}</code>
@@ -1875,7 +1876,7 @@ function DashboardList({
           <p className="text-slate-400 text-sm">
             A variety of interactive dashboards — from business-intelligence reports to newer Power BI features like Python and Deneb visualizations.
             <br />
-            Several are early-career work (roughly four to seven years old), kept here to show where the journey began. My current core strengths live on the{" "}
+            This is my 2017–2022 dashboard era — the BI foundation the rest of my work builds on, kept here to show the progression. For what I&apos;m building now (2021–present — data pipelines, semantic layers, and agentic AI), see the{" "}
             <button
               onClick={() => setRoute('data-projects')}
               className="underline decoration-cyan-500/70 hover:decoration-cyan-300 text-cyan-300"

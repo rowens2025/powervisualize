@@ -1,7 +1,86 @@
 import { pool } from '../_db.js';
-import { resolveSportsQuery, SPORTS_DIMENSIONS, type SportsQuery, type SportsChartSpec } from './sportsMetrics.js';
+import { resolveSportsQuery, resolveSportsCombo, resolveSportsDerived, SPORTS_DIMENSIONS, type SportsQuery, type SportsChartSpec } from './sportsMetrics.js';
 
-export type SportsRow = { category: string; value: number };
+export type SportsRow = { category: string; value: number; value2?: number };
+
+/** Two breakdown metrics on one chart (bars + line). Reads mart_team_season once. */
+export async function runSportsCombo(q: {
+  metricA: string;
+  metricB: string;
+  season?: number;
+  sort?: 'asc' | 'desc';
+  limit?: number;
+}): Promise<{ ok: true; chartSpec: SportsChartSpec; rows: SportsRow[] } | { ok: false; error: string }> {
+  const resolved = resolveSportsCombo(q);
+  if (!resolved.ok) return { ok: false, error: resolved.error };
+  const { a, b, text, params } = resolved;
+
+  let result;
+  try {
+    result = await pool.query(text, params);
+  } catch (err: any) {
+    console.error('[sports] combo query failed:', err?.message ?? err);
+    return { ok: false, error: 'The sports data source was slow to respond. Please try again.' };
+  }
+
+  const rows: SportsRow[] = result.rows
+    .filter((r: any) => r.category != null && r.value != null)
+    .map((r: any) => ({ category: String(r.category), value: Number(r.value), value2: r.value2 != null ? Number(r.value2) : undefined }));
+
+  const chartSpec: SportsChartSpec = {
+    metricId: `${a.id}__${b.id}`,
+    title: `${a.label} vs ${b.label}`,
+    chartType: 'combo',
+    kind: 'breakdown',
+    categoryLabel: 'Team',
+    measureLabel: a.measureLabel,
+    unit: a.unit,
+    description: `${a.measureLabel} (bars) and ${b.measureLabel} (line) by team, so you can compare both at once.`,
+    secondaryMetricId: b.id,
+    secondaryLabel: b.measureLabel,
+    secondaryUnit: b.unit,
+  };
+  return { ok: true, chartSpec, rows };
+}
+
+/** Crunch two breakdown metrics into a new derived metric (single value per team). */
+export async function runSportsDerived(q: {
+  metricA: string;
+  metricB: string;
+  op: string;
+  label?: string;
+  season?: number;
+  sort?: 'asc' | 'desc';
+  limit?: number;
+}): Promise<{ ok: true; chartSpec: SportsChartSpec; rows: SportsRow[] } | { ok: false; error: string }> {
+  const resolved = resolveSportsDerived(q);
+  if (!resolved.ok) return { ok: false, error: resolved.error };
+  const { a, b, label, text, params } = resolved;
+
+  let result;
+  try {
+    result = await pool.query(text, params);
+  } catch (err: any) {
+    console.error('[sports] derived query failed:', err?.message ?? err);
+    return { ok: false, error: 'The sports data source was slow to respond. Please try again.' };
+  }
+
+  const rows: SportsRow[] = result.rows
+    .filter((r: any) => r.category != null && r.value != null)
+    .map((r: any) => ({ category: String(r.category), value: Number(r.value) }));
+
+  const chartSpec: SportsChartSpec = {
+    metricId: `${a.id}_${resolved.op}_${b.id}`,
+    title: label,
+    chartType: 'bar',
+    kind: 'breakdown',
+    categoryLabel: 'Team',
+    measureLabel: label,
+    unit: '',
+    description: `Derived metric: ${a.measureLabel} ${resolved.op} ${b.measureLabel}, computed per team on the fly.`,
+  };
+  return { ok: true, chartSpec, rows };
+}
 
 /**
  * Execute one governed sports query against the MLB marts (portfolio Neon,

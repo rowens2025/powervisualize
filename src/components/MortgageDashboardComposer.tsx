@@ -50,7 +50,7 @@ type TileState = {
   error?: string;
 };
 
-const CHART_TYPE_LABEL: Record<ChartType, string> = {
+const CHART_TYPE_LABEL: Record<Exclude<ChartType, 'combo'>, string> = {
   line: 'Line',
   area: 'Area',
   bar: 'Bar',
@@ -444,7 +444,7 @@ export default function MortgageDashboardComposer() {
           <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
             {tiles.map((tile) => {
               const metric = catalogById(tile.runSpec.metricId);
-              const allowedTypes = metric?.chartTypes ?? [];
+              const allowedTypes = (metric?.chartTypes ?? []).filter((ct): ct is Exclude<ChartType, 'combo'> => ct !== 'combo');
               return (
                 <div key={tile.id} className={`rounded-xl border border-slate-800 bg-slate-950/50 p-3 ${tile.span === 'full' ? 'lg:col-span-2' : ''}`}>
                   <div className="flex items-center justify-between gap-2 mb-1">
