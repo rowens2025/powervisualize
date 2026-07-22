@@ -1680,7 +1680,7 @@ function About() {
           </p>
 
           <p>
-            I’ve also been using dbt since 2018—back when it was still Fishtown Analytics, my neighbors a few blocks over in Philly. Those analytics-engineering habits stuck; I bring the same modular, well-tested, well-modeled approach to whatever stack I’m on now.
+            I’ve also been using dbt since 2018—back when it was still Fishtown Analytics, my neighbors a few blocks over in Philly. Those analytics-engineering habits stuck—modular, tested, DAG-driven—and I bring the same discipline to medallion pipelines in PySpark and notebooks, not just dbt.
           </p>
 
           <p>
@@ -1688,7 +1688,7 @@ function About() {
           </p>
 
           <p>
-            I care deeply about operational excellence: CI/CD for data and analytics artifacts, versioned pipelines, automated testing/validation, and MLOps patterns that make model outputs repeatable, observable, and safe to ship.
+            I care deeply about operational excellence: CI/CD for data and analytics artifacts, versioned pipelines, automated testing/validation, and MLOps patterns that make model outputs repeatable, observable, and safe to ship—increasingly with agentic AI woven through the workflow.
           </p>
           </div>
 
