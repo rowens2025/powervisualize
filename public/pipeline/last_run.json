@@ -1,12 +1,12 @@
 {
-  "run_id": "manual__2026-07-22T00:00:00+00:00",
+  "run_id": "manual__2026-07-23T00:00:00+00:00",
   "dag_id": "mlb_daily_pipeline",
   "status": "success",
-  "finished_at": "2026-07-22T14:11:11.637363Z",
-  "rows_ingested": 47,
-  "snapshot_rows": 120,
-  "snapshot_date": "2026-07-22",
+  "finished_at": "2026-07-23T14:20:55.733935Z",
+  "rows_ingested": 37,
+  "snapshot_rows": 150,
+  "snapshot_date": "2026-07-23",
   "dbt_tests_passed": 15,
   "latest_game_date": "2026-07-23",
-  "games_in_warehouse": 1882
+  "games_in_warehouse": 1887
 }
